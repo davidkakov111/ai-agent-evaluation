@@ -83,8 +83,14 @@ Ignore everything else if these are low:
     ----------------------------------------
     ----------------------------------------
     BUG
+
     The bug occurred because the React state wasn’t synchronized when a new member joined the organization, so I couldn’t assign a task to the new member immediately without reloading the page.
     AI response and resolution prompt: debug-7.txt
+    ----------------------------------------
+    BUG
+
+    If a user sends join requests to multiple organizations and gets approved in one, the pending requests in the other organizations become stuck. They can neither be approved nor properly canceled, resulting in a frozen state due to missing state handling logic.
+    AI response and resolution prompt: debug-8.txt
     ----------------------------------------
 
     GENERAL NOTE: Its not a problem, but good to knwo htet ai will do what you ask from it and not more, like i didnt asked it to write comments so it skipp the comments etc.

@@ -160,4 +160,21 @@ describe("OrganizationService invariants", () => {
     expect(repository.createMembership).not.toHaveBeenCalled();
     expect(repository.updateJoinRequestStatus).toHaveBeenCalledTimes(1);
   });
+
+  it("allows rejection even when target user already belongs to another organization", async () => {
+    repository.findJoinRequestByIdInOrganization.mockResolvedValueOnce({
+      id: "jr-1",
+      userId: "employee-2",
+      organizationId: "org-a",
+      status: "PENDING",
+      requestedRole: "EMPLOYEE",
+    });
+    repository.updateJoinRequestStatus.mockResolvedValueOnce(1);
+
+    await service.rejectJoinRequest({ joinRequestId: "jr-1" }, actorOwner);
+
+    expect(repository.findMembershipByUserId).not.toHaveBeenCalled();
+    expect(repository.createMembership).not.toHaveBeenCalled();
+    expect(repository.updateJoinRequestStatus).toHaveBeenCalledTimes(1);
+  });
 });

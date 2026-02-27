@@ -1,0 +1,33 @@
+Great bug report. You were exactly right.
+
+Cause:
+
+In join-request review logic, we checked “does this user already belong to an org?” before both approve and reject.
+So stale pending requests in other orgs became “frozen”: reject was blocked by the same approval constraint.
+Fix:
+
+Updated service logic so membership check is done only for APPROVED.
+REJECTED now always works for pending requests in that org.
+Changed files:
+
+organization-service.ts
+organization-service.test.ts
+added regression test: rejection succeeds even if target user already belongs elsewhere.
+Validation:
+
+test passed (17/17)
+lint passed
+typecheck passed
+build passed
+This should unfreeze those stale requests immediately after deploy/restart.
+
+
+2 files changed
++28
+-11
+Undo
+
+Review
+codex/code/src/server/services/organization-service.test.ts
+codex/code/src/server/services/organization-service.ts
+

@@ -367,17 +367,6 @@ export class OrganizationService {
 
     try {
       await this.db.$transaction(async (tx) => {
-        const targetMembership = await this.organizationRepository.findMembershipByUserId(
-          joinRequest.userId,
-          tx,
-        );
-
-        if (targetMembership !== null) {
-          throw new PreconditionFailedDomainError(
-            "User already belongs to an organization and cannot be approved again.",
-          );
-        }
-
         const updatedCount = await this.organizationRepository.updateJoinRequestStatus(
           {
             id: joinRequest.id,
@@ -395,6 +384,17 @@ export class OrganizationService {
         if (params.input.status === "APPROVED") {
           if (params.input.roleToAssign === null) {
             throw new ForbiddenDomainError("Role assignment is required for approved requests.");
+          }
+
+          const targetMembership = await this.organizationRepository.findMembershipByUserId(
+            joinRequest.userId,
+            tx,
+          );
+
+          if (targetMembership !== null) {
+            throw new PreconditionFailedDomainError(
+              "User already belongs to an organization and cannot be approved again.",
+            );
           }
 
           await this.organizationRepository.createMembership(
