@@ -81,6 +81,11 @@ Ignore everything else if these are low:
     I asked the AI to upgrade the project to Prisma v7, which required significant logic restructuring. Major Prisma upgrades aren’t easy, but the AI managed to complete it in under 20 minutes, though it consumed many tokens — likely due to limited online examples for the latest version.
     AI response and resolution prompt: debug-6.txt
     ----------------------------------------
+    ----------------------------------------
+    BUG
+    The bug occurred because the React state wasn’t synchronized when a new member joined the organization, so I couldn’t assign a task to the new member immediately without reloading the page.
+    AI response and resolution prompt: debug-7.txt
+    ----------------------------------------
 
     GENERAL NOTE: Its not a problem, but good to knwo htet ai will do what you ask from it and not more, like i didnt asked it to write comments so it skipp the comments etc.
     

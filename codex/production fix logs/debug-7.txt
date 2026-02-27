@@ -1,0 +1,31 @@
+You found a real UX/state bug.
+
+Why it happened:
+
+CreateTaskForm keeps assignedToUserId in local state.
+When a new member is approved, dropdown options update, but local selected value can still be empty/invalid.
+Submit sent assignedToUserId: "", so Zod returned:
+Too small: expected string to have >=1 characters
+Full reload remounted form and reinitialized the state, so it worked.
+Fix applied:
+
+In create-task-form.tsx:
+Normalize assignee at submit-time:
+if current selection is invalid/empty, fallback to first available employee
+if still no valid employee, show friendly "Please select an employee."
+This removes the stale-state dependency and works immediately after approval without page reload.
+Validation:
+
+npm run lint passed
+npm run typecheck passed
+npm run build passed
+If you’re running via Docker, rebuild/restart once:
+
+docker compose down
+docker compose up --build
+
+1 file changed
+Undo
+
+Review
+codex/code/src/features/tasks/components/create-task-form.tsx

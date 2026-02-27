@@ -38,11 +38,23 @@ export function CreateTaskForm({ employees }: CreateTaskFormProps) {
     setError(null);
     setIsSubmitting(true);
 
+    const effectiveAssignedToUserId = employees.some(
+      (employee) => employee.userId === assignedToUserId,
+    )
+      ? assignedToUserId
+      : (employees[0]?.userId ?? "");
+
+    if (effectiveAssignedToUserId === "") {
+      setError("Please select an employee.");
+      setIsSubmitting(false);
+      return;
+    }
+
     try {
       await getBrowserTrpcClient().task.create.mutate({
         title,
         description: description.trim() === "" ? null : description,
-        assignedToUserId,
+        assignedToUserId: effectiveAssignedToUserId,
       });
 
       setTitle("");
