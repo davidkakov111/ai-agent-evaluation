@@ -8,11 +8,11 @@ mkdir -p "$DATA_DIR"
 if [ "$(id -u)" = "0" ]; then
   chown -R nextjs:nodejs "$DATA_DIR"
 
-  exec su-exec nextjs:nodejs sh -c '
-    npx prisma migrate deploy
+  exec su-exec nextjs:nodejs sh -eu -c '
+    npx prisma migrate deploy &&
     exec npm run start
   '
 fi
 
-npx prisma migrate deploy
+npx prisma migrate deploy &&
 exec npm run start

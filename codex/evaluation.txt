@@ -75,9 +75,17 @@ Ignore everything else if these are low:
         'Invalid task status transition.'
     The AI responded and resolved it: debug-5.txt
     ----------------------------------------
+    DEPRECATED PRISMA USAGE
+
+    Prisma had a newer version than the one the AI initially used.
+    I asked the AI to upgrade the project to Prisma v7, which required significant logic restructuring. Major Prisma upgrades aren’t easy, but the AI managed to complete it in under 20 minutes, though it consumed many tokens — likely due to limited online examples for the latest version.
+    AI response and resolution prompt: debug-6.txt
+    ----------------------------------------
 
     GENERAL NOTE: Its not a problem, but good to knwo htet ai will do what you ask from it and not more, like i didnt asked it to write comments so it skipp the comments etc.
     
+    Overall, I’m really impressed with the code quality. I didn’t review every file in depth, but what I checked looks clean, well-structured, and free of obvious issues.
+    The only thing I slightly miss is comments — I didn’t ask for them, so it’s understandable, but they would have been a nice addition.
 
 Time to implement evrything was: 1 h 15 min 
 

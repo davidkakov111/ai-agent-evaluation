@@ -2,6 +2,7 @@
 
 FROM node:22-alpine AS base
 WORKDIR /app
+ENV DATABASE_URL=file:./prisma/dev.db
 
 FROM base AS deps
 COPY package.json package-lock.json ./
@@ -26,11 +27,12 @@ RUN apk add --no-cache dumb-init su-exec \
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm ci --omit=dev && npm run prisma:generate && npm cache clean --force
 
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.ts ./next.config.ts
+COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY docker/entrypoint.sh /app/docker/entrypoint.sh
 
 RUN chmod +x /app/docker/entrypoint.sh \

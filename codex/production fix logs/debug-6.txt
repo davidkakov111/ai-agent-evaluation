@@ -1,0 +1,92 @@
+Good catch. This one is not a prompt/planning miss in your spec and not a runtime bug in this codebase.
+
+Cause:
+
+Your project is on Prisma 6.16.2 (prisma + @prisma/client).
+That schema syntax (datasource db { url = env(...) }) is valid in Prisma 6.
+The message you see is from Prisma 7-era tooling/language-server expectations in the IDE.
+I verified your project versions:
+
+prisma@6.16.2
+@prisma/client@6.16.2
+So why it happened:
+
+Local editor tooling/version mismatch, not app implementation logic.
+How to fix (safe, no Docker/app breakage):
+
+In VS Code Prisma extension, switch to/use Prisma 6 for this workspace (or disable pre-release/Prisma 7 mode).
+Reload window.
+Keep project dependencies as-is.
+I did not force-migrate you to Prisma 7 because that is a major migration and can break runtime/Docker setup.
+If you want, I can do a proper Prisma 7 migration in a separate controlled step. 
+
+
+
+
+
+
+
+
+
+
+You were right to escalate this. I migrated your project to Prisma 7 and kept app + Docker working.
+
+What caused the error originally:
+
+This was not your prompt’s fault.
+It was a tooling/version mismatch first (IDE expecting Prisma 7 config style while code was Prisma 6).
+When upgrading to Prisma 7, additional breaking changes had to be handled:
+datasource URL must come from prisma.config.ts
+Prisma Client now needs a DB adapter for SQLite in this setup
+prisma generate must be explicit in build/runtime flows
+Docker runtime must include prisma.config.ts
+So root cause was implementation/versioning migration work, not missing prompt detail, and not a “hidden by MCP” issue.
+
+Implemented fixes (Prisma 7 migration):
+
+Upgraded deps:
+prisma + @prisma/client to v7
+added @prisma/adapter-better-sqlite3 + better-sqlite3
+Added Prisma config:
+prisma.config.ts
+Updated schema for Prisma 7 config model:
+schema.prisma
+removed datasource.url
+Updated DB client to adapter-based Prisma 7 constructor with safe timestamp compatibility:
+client.ts
+Made generation explicit:
+package.json (build now runs prisma:generate)
+Docker hardening for Prisma 7:
+Dockerfile
+build-time DATABASE_URL default
+runtime prisma:generate
+copy prisma.config.ts into final image
+entrypoint.sh
+fail-fast migration (&&, sh -eu) so app won’t start if migrate fails
+Validation performed:
+
+npm run prisma:validate ✅
+npm run prisma:generate ✅
+npm run lint ✅
+npm run typecheck ✅
+npm run test ✅
+npm run build ✅
+docker compose build ✅
+docker compose up logs show successful prisma migrate deploy then app startup ✅
+container health ✅
+If you want, I can also add a short “Prisma 7 notes” section to README so future contributors don’t regress this.
+
+
+6 files changed
++21
+-8
+Undo
+
+Review
+codex/code/Dockerfile
+codex/code/docker/entrypoint.sh
+codex/code/package.json
+codex/code/prisma.config.ts
+codex/code/prisma/schema.prisma
+codex/code/src/server/db/client.ts
+
