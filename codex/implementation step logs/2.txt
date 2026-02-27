@@ -1,0 +1,73 @@
+Implemented Step 2 only: clean architecture skeleton and boundaries.
+
+What I added
+
+Server module boundaries under src/server/*:
+
+DB client: src/server/db/client.ts, src/server/db/index.ts
+Auth types/session boundary: src/server/auth/types.ts, src/server/auth/session.ts, src/server/auth/index.ts
+Domain errors + single tRPC mapping policy: src/server/errors/domain-error.ts, src/server/errors/map-error-to-trpc.ts, src/server/errors/index.ts
+Policies: src/server/policies/auth-policy.ts, src/server/policies/index.ts
+Repositories/services skeleton: src/server/repositories/system-repository.ts, src/server/services/system-service.ts, src/server/services/index.ts
+tRPC API boundary:
+
+Context + base procedures/middleware: src/server/trpc/context.ts, src/server/trpc/trpc.ts
+App router + health router: src/server/trpc/routers/_app.ts, src/server/trpc/routers/health.ts
+Route handler: src/app/api/trpc/[trpc]/route.ts
+Shared validation layer:
+
+src/lib/validation/common.ts
+src/lib/validation/index.ts
+Feature-slice skeleton:
+
+src/features/README.md
+src/features/{auth,organizations,join-requests,tasks} via .gitkeep
+Guardrails to prevent accidental Prisma usage outside intended layers:
+
+ESLint restrictions in eslint.config.mjs
+Architecture/review checklist doc in src/server/ARCHITECTURE.md
+Validation
+
+npm run typecheck ✅
+npm run lint ✅ (0 warnings)
+npm run test ✅
+npm run build ✅
+If you want, I’ll implement Step 3 next (full Prisma domain models + initial migration + seed).
+
+
+29 files changed
++479
+-0
+Undo
+
+Review
+eslint.config.mjs
+src/app/api/trpc/[trpc]/route.ts
+src/features/README.md
+src/features/auth/.gitkeep
+src/features/join-requests/.gitkeep
+src/features/organizations/.gitkeep
+src/features/tasks/.gitkeep
+src/lib/validation/common.ts
+src/lib/validation/index.ts
+src/server/ARCHITECTURE.md
+src/server/auth/index.ts
+src/server/auth/session.ts
+src/server/auth/types.ts
+src/server/db/client.ts
+src/server/db/index.ts
+src/server/errors/domain-error.ts
+src/server/errors/index.ts
+src/server/errors/map-error-to-trpc.ts
+src/server/policies/auth-policy.ts
+src/server/policies/index.ts
+src/server/repositories/index.ts
+src/server/repositories/system-repository.ts
+src/server/services/index.ts
+src/server/services/system-service.ts
+src/server/trpc/context.ts
+src/server/trpc/index.ts
+src/server/trpc/routers/_app.ts
+src/server/trpc/routers/health.ts
+src/server/trpc/trpc.ts
+

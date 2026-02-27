@@ -1,0 +1,10 @@
+.next
+node_modules
+coverage
+dist
+build
+package-lock.json
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm

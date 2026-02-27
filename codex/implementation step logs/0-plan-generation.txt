@@ -1,0 +1,96 @@
+# TaskFlow v1 Implementation Plan (10 Steps)
+
+## Summary
+Build a greenfield Next.js App Router + tRPC + Prisma (SQLite) multi-tenant SaaS with strict TypeScript, Zod-validated inputs, Auth.js database sessions, clean service-layer business logic, and role-based authorization. The plan below is sequential and implementation-ready.
+
+## 1. Project Bootstrap and Engineering Guardrails
+Layers affected: repo setup, tooling, CI, developer experience.  
+Implement a fresh Next.js App Router TypeScript project with strict TS flags (`strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`), ESLint + Prettier, and scripts for `lint`, `typecheck`, `test`, `build`, `prisma:*`. Add `.gitignore` for `node_modules`, `.next`, Prisma SQLite files, logs, coverage, and env files. Install core dependencies: `@trpc/*`, `@tanstack/react-query`, `zod`, `prisma`, `@prisma/client`, `next-auth` (Auth.js), `@auth/prisma-adapter`, `bcrypt`, and test stack (`vitest`).  
+Risk/edge cases: strict TS initially breaks fast; enforce early to avoid debt.
+
+## 2. Clean Architecture Skeleton (Before Features)
+Layers affected: server architecture, API boundaries, shared types.  
+Create clear module boundaries: `src/server/{db,auth,trpc,repositories,services,policies,errors}`, `src/features/*` for UI-domain slices, and shared validation in `src/lib/validation`. Define domain error classes and a single error-to-tRPC mapping policy. Keep Prisma access inside repositories/services only, not in UI components.  
+Risk/edge cases: accidental Prisma usage in UI/API handlers; prevent via structure and review checklist.
+
+## 3. Prisma Data Model and Migration Baseline
+Layers affected: DB schema, migration pipeline, persistence constraints.  
+Define Prisma enums/models: `Role (OWNER|ADMIN|EMPLOYEE)`, `TaskStatus (TODO|IN_PROGRESS|DONE)`, `JoinRequestStatus (PENDING|APPROVED|REJECTED)`, `User`, Auth.js tables (`Session`, `Account`, `VerificationToken`), `Organization`, `Membership`, `JoinRequest`, `Task`. Enforce one-organization membership via unique membership per user. Add indexes for org/task queries and pending join requests. Create first migration and seed script for local sanity data.  
+Risk/edge cases: SQLite lacks partial indexes; “single pending request” must be guarded in service logic + transactional checks.
+
+## 4. Authentication and Session Management
+Layers affected: auth, API context, security.  
+Implement Auth.js with Prisma adapter and database-backed sessions. Use credentials auth with email/password and secure hashing (`bcrypt`, cost factor policy). Build registration flow with Zod validation, unique email handling, password policy, and normalized email casing. Expose authenticated session in tRPC context for downstream authz middleware.  
+Risk/edge cases: credential stuffing/bruteforce risk; add rate-limit integration point and secure generic error messages.
+
+## 5. Authorization Policies and Multi-Tenant Invariants
+Layers affected: domain logic, security policy, services.  
+Implement reusable policy guards: `requireAuth`, `requireMembership`, `requireRole(OWNER|ADMIN)`, tenant scope checks by `organizationId`. Enforce invariants: user can create/request/join only if not already in any org; org creator auto-membership as `OWNER`; no “leave organization” operation exposed. Join approval/rejection only by OWNER/ADMIN in same org.  
+Risk/edge cases: cross-tenant access via guessed IDs; all repository queries must include org scope.
+
+## 6. Business Services (Framework-Agnostic Core)
+Layers affected: services, repositories, domain rules.  
+Implement services independent of tRPC/UI:
+- `OrganizationService`: create org, list discoverable orgs, create join request, list pending requests, approve/reject request.
+- `TaskService`: create task, assign employee, list tasks (org-wide for OWNER/ADMIN, assigned-only for EMPLOYEE), update task status.  
+Use transactional writes for join approval (request state update + membership creation). Centralize task state transition rules in one pure function used by service and tests.  
+Risk/edge cases: race conditions on approval and duplicate memberships; use transactions and unique constraint handling.
+
+## 7. tRPC Router Layer and Zod Contracts
+Layers affected: API, DTO contracts, transport validation.  
+Create routers: `auth`, `organization`, `joinRequest`, `task`, each with Zod input/output schemas. Apply middleware composition for auth + role checks. Add pagination/sorting for list endpoints and strongly typed response DTOs. Ensure all thrown domain errors map to consistent tRPC error codes/messages.  
+Risk/edge cases: leakage of internal DB fields; return explicit DTOs, not raw Prisma models.
+
+## 8. App Router UI Implementation (Functional Admin Scope)
+Layers affected: UI, page routing, form handling, UX security.  
+Implement pages/flows:
+- Public/auth: register, login.
+- Pre-join: organization directory + “request to join”.
+- Owner/admin dashboard: pending join requests (approve/reject + role assignment), all tasks view, create/assign tasks, status updates.
+- Employee dashboard: only assigned tasks, status update only for own tasks.  
+Use server components for data fetching where practical and client components for interactive forms/mutations. Add route guards and empty/error states for every flow.  
+Risk/edge cases: stale role/session data; revalidate key views after mutations and always enforce server-side authz regardless of UI.
+
+## 9. Testing, Quality Gates, and Regression Protection
+Layers affected: tests, CI quality, reliability.  
+Unit tests (mandatory): task transition function with allowed/blocked transitions and role ownership checks. Service tests: join request approval/rejection invariants, one-org-only constraint, cross-tenant denial. API tests: tRPC procedures for permission boundaries and validation failures. Add CI pipeline: `prisma validate`, `typecheck`, `lint --max-warnings=0`, `test`, `build`.  
+Risk/edge cases: false confidence from UI-only tests; prioritize service/API tests where business rules live.
+
+## 10. Production Readiness and Operational Hardening
+Layers affected: deployment readiness, docs, runtime stability.  
+Finalize environment contract (`.env.example`), startup/migration scripts (`prisma migrate deploy`), and operational docs (local run, migration flow, backup note for SQLite file). Add structured server logging and safe error boundaries. Validate no TypeScript `any`, no ESLint warnings, no deprecated Next.js/tRPC patterns.  
+Risk/edge cases: SQLite concurrency and backup limitations in multi-instance deployments; document as explicit v1 constraint and future migration path to Postgres.
+
+## Important Public APIs / Interfaces / Types
+- Prisma enums: `Role`, `TaskStatus`, `JoinRequestStatus`.
+- Core entities: `User`, `Organization`, `Membership`, `JoinRequest`, `Task`.
+- Service interfaces:
+  - `OrganizationService.createOrganization(input, actor)`
+  - `OrganizationService.requestJoin(input, actor)`
+  - `OrganizationService.approveJoinRequest(input, actor)`
+  - `TaskService.createTask(input, actor)`
+  - `TaskService.updateTaskStatus(input, actor)`
+  - `TaskService.listTasks(input, actor)`
+- tRPC procedures:
+  - `auth.register`, `auth.session`
+  - `organization.create`, `organization.listPublic`, `organization.me`
+  - `joinRequest.create`, `joinRequest.listPending`, `joinRequest.approve`, `joinRequest.reject`
+  - `task.create`, `task.list`, `task.updateStatus`, `task.reassign` (OWNER/ADMIN only)
+- Shared Zod schemas for all command/query inputs and outward DTOs.
+
+## Test Cases and Scenarios
+- Task transitions: valid (`TODO->IN_PROGRESS`, `IN_PROGRESS->DONE`, `DONE->IN_PROGRESS`) and invalid (`TODO->DONE`, same-state no-op if disallowed).
+- Role authorization: EMPLOYEE cannot create/reassign tasks; OWNER/ADMIN can.
+- Tenant isolation: user cannot read or mutate tasks/join requests from another org.
+- Membership invariant: user already in org cannot create new org or submit join request.
+- Join workflow: pending -> approved creates membership exactly once; rejected cannot be approved later without new request.
+- Auth validation: duplicate email rejected; bad credentials rejected; session-required procedures blocked when unauthenticated.
+
+## Assumptions and Defaults Chosen
+- Authentication: Auth.js with Prisma adapter and database sessions.
+- Organization discovery: public directory with request-to-join flow.
+- UI scope: functional admin UI (complete workflows, pragmatic styling).
+- Membership policy: exactly one organization per user; no leave operation.
+- Task workflow: constrained transition model as defined above (includes reopen from `DONE` to `IN_PROGRESS`).
+- Database: SQLite file-based for v1; architecture keeps DB access abstracted for future Postgres migration.
+

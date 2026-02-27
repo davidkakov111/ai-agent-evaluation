@@ -1,0 +1,58 @@
+Implemented Step 6 only: core business services and domain rules.
+
+What was added/updated
+
+Added framework-agnostic task validation contracts:
+
+task.ts
+exported via index.ts
+Added pure task transition rules (service-independent):
+
+task-status-rules.ts
+Added unit tests for transition rules:
+
+task-status-rules.test.ts
+Added tenant-scoped TaskRepository (all task lookups/writes include organizationId scope):
+
+task-repository.ts
+exported in repositories/index.ts
+Added TaskService with role-aware behavior:
+
+task-service.ts
+createTask: OWNER/ADMIN only, assignee must be EMPLOYEE in same org
+reassignTask: OWNER/ADMIN only, assignee must be EMPLOYEE in same org
+listTasks: OWNER/ADMIN see org-wide, EMPLOYEE sees assigned-only
+updateTaskStatus: EMPLOYEE can update only own tasks; all transitions enforced via pure rule function; atomic status update to handle race
+Wired TaskService into service container:
+
+services/index.ts
+Hardened OrganizationService race/duplicate handling with transactional + unique-constraint mapping:
+
+organization-service.ts
+added listDiscoverableOrganizations (kept listPublicOrganizations alias)
+improved join approval/create-org conflict handling for duplicate membership races
+Validation
+
+npm run typecheck passed
+npm run lint passed (0 warnings)
+npm run test passed (4 task transition tests)
+npm run build passed
+If you want, I’ll proceed to Step 7 (full tRPC routers/contracts for organization, joinRequest, and task using these services).
+
+
+9 files changed
++557
+-34
+Undo
+
+Review
+src/lib/validation/index.ts
+src/lib/validation/task.ts
+src/server/repositories/index.ts
+src/server/repositories/task-repository.ts
+src/server/services/index.ts
+src/server/services/organization-service.ts
+src/server/services/task-service.ts
+src/server/services/task-status-rules.test.ts
+src/server/services/task-status-rules.ts
+

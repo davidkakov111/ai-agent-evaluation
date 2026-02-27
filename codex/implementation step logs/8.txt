@@ -1,0 +1,97 @@
+Implemented Step 8 only: functional App Router UI with guarded flows, server-driven data loading, and client-side mutations.
+
+UI flows added
+
+Public auth pages:
+
+login page
+register page
+login form
+register form
+Pre-join org directory + request flow:
+
+organizations page
+request join button
+Role-aware dashboard:
+
+dashboard page
+Owner/Admin join-request moderation:
+pending join requests panel
+Owner/Admin task creation:
+create task form
+Task list for all roles + status updates + admin reassignment:
+task list panel
+Root routing:
+
+home redirect page
+Route guards and UX security
+
+Server-side guard helpers:
+auth navigation guards
+Applied guards:
+login/register: redirect authenticated users away
+organizations: authenticated-only and redirect members to dashboard
+dashboard: membership-required
+Sign out control:
+sign out button
+Server + client data plumbing for App Router
+
+Server component caller:
+server tRPC caller
+Browser mutation client:
+browser tRPC client
+Step-8-supporting API enhancements
+
+Added organization.members endpoint (for assignee/member UI data):
+organization router
+Extended pagination/sorting options for org/join/task list APIs:
+organization router
+join-request router
+task router
+_app router registration
+organization repository/service, organization service
+task repository/service, task service
+Stale-session handling
+
+All client mutations call router.refresh() after success so server components re-fetch with current role/session state.
+Server-side authorization still enforced by services/policies regardless of UI controls.
+Styling/UI shell
+
+Updated app branding + global UI tokens for a functional admin interface:
+globals.css
+layout metadata
+Validation
+
+npm run typecheck passed
+npm run lint passed (0 warnings)
+npm run test passed
+npm run build passed
+
+21 files changed
++1288
+-80
+Undo
+
+Review
+src/app/dashboard/page.tsx
+src/app/globals.css
+src/app/layout.tsx
+src/app/login/page.tsx
+src/app/organizations/page.tsx
+src/app/page.tsx
+src/app/register/page.tsx
+src/features/auth/components/login-form.tsx
+src/features/auth/components/register-form.tsx
+src/features/auth/components/sign-out-button.tsx
+src/features/join-requests/components/pending-join-requests-panel.tsx
+src/features/organizations/components/request-join-button.tsx
+src/features/tasks/components/create-task-form.tsx
+src/features/tasks/components/task-list-panel.tsx
+src/lib/trpc/client.ts
+src/server/auth/index.ts
+src/server/auth/navigation.ts
+src/server/repositories/organization-repository.ts
+src/server/services/organization-service.ts
+src/server/trpc/routers/organization.ts
+src/server/trpc/server-caller.ts
+

@@ -1,0 +1,51 @@
+You’re correct. That’s a gap, and your original requirement was clear.
+
+What happened:
+
+Backend support does exist for org creation:
+organization router (organization.create)
+organization service (createOrganization)
+But UI flow for “Create organization” was not added on the post-login pre-join page:
+organizations page
+So:
+
+It’s not “located somewhere else” in UI.
+It was omitted in implementation.
+Root cause is planning/coverage mistake: the later plan/UI step emphasized directory + join-request flow and missed explicit “create organization” UI, even though your initial spec required it.
+If you want, I can add the missing create-organization form/flow now on /organizations and wire it to organization.create.
+
+ME: Yes pls.
+
+You were right to flag it. I added the missing feature now.
+
+Implemented:
+
+New create-org UI component:
+create-organization-form.tsx
+Wired it into organizations page:
+organizations/page.tsx
+What it does:
+
+On /organizations, user now sees Create Organization form.
+Fields: name, slug (+ “Suggest” slug button).
+Calls existing organization.create tRPC API.
+On success, redirects to /dashboard (creator becomes OWNER as backend already enforces).
+Validation:
+
+npm run lint passed
+npm run typecheck passed
+npm run build passed
+To test in Docker:
+
+docker compose down
+docker compose up --build
+Register/login → go to /organizations → create org → should land on /dashboard.
+
+2 files changed
++106
+-2
+Undo
+
+Review
+codex/code/src/app/organizations/page.tsx
+codex/code/src/features/organizations/components/create-organization-form.tsx

@@ -1,0 +1,69 @@
+Implemented Step 4 only: authentication/session management with Auth.js + Prisma DB sessions, credentials auth, and registration flow.
+
+Implemented
+
+Auth.js config with Prisma adapter, database session strategy, credentials provider:
+config.ts
+route.ts
+Real server session resolution (replacing stub) and session exposure in tRPC context:
+session.ts
+context.ts
+Registration flow via tRPC with Zod input/output:
+auth router
+app router wiring
+Auth repository/service separation (no Prisma in UI):
+auth repository
+auth service
+service container update
+Zod schemas for login/register with password policy + email normalization:
+auth validation
+validation exports
+Password hashing policy with bcrypt rounds policy:
+password.ts
+env example update
+NextAuth type augmentation for session user fields:
+next-auth.d.ts
+Security and edge-case handling
+
+Generic login failure behavior (authorize returns null for invalid credentials/invalid input).
+Unique email collision handled in service with conflict mapping and non-enumerating message.
+Added rate-limit integration point (no-op by default, pluggable later):
+rate-limit.ts
+Added RATE_LIMITED domain error -> tRPC TOO_MANY_REQUESTS mapping:
+domain-error.ts
+map-error-to-trpc.ts
+Validation
+
+npm run typecheck passed
+npm run lint passed (0 warnings)
+npm run test passed
+npm run build passed
+Ready for Step 5 (authorization policies + multi-tenant invariants).
+
+
+19 files changed
++412
+-3
+Undo
+
+Review
+.env.example
+src/app/api/auth/[...nextauth]/route.ts
+src/lib/validation/auth.ts
+src/lib/validation/index.ts
+src/server/auth/config.ts
+src/server/auth/index.ts
+src/server/auth/password.ts
+src/server/auth/rate-limit.ts
+src/server/auth/session.ts
+src/server/errors/domain-error.ts
+src/server/errors/index.ts
+src/server/errors/map-error-to-trpc.ts
+src/server/repositories/auth-repository.ts
+src/server/repositories/index.ts
+src/server/services/auth-service.ts
+src/server/services/index.ts
+src/server/trpc/routers/_app.ts
+src/server/trpc/routers/auth.ts
+src/types/next-auth.d.ts
+

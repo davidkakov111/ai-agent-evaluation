@@ -1,0 +1,31 @@
+You found a real implementation bug, and it’s fixed now.
+
+Why it happened:
+
+After first update, server status changed, but the client table kept stale local transition state.
+Second click could send the same status again (or stale next status), causing backend to correctly reject with Invalid task status transition..
+Full page reload reset client state, so it looked “fixed” temporarily.
+Fix applied:
+
+Synced task table local state with incoming server props.
+Optimistically advanced local status after successful mutation.
+Derived allowed transitions from current local status.
+Added guard for out-of-sync row state.
+Changed file:
+
+task-list-panel.tsx
+Validation:
+
+lint passed
+typecheck passed
+build passed
+If you’re running Docker, restart with rebuild to apply:
+
+docker compose down
+docker compose up --build
+
+1 file changed
+Undo
+
+Review
+codex/code/src/features/tasks/components/task-list-panel.tsx

@@ -34,3 +34,7 @@ Ignore everything else if these are low:
     How much did I personally need to correct, rewrite, or guide the AI to reach the final desired result?
 
 ⭐ Any other notes/observations?
+
+Time to implement evrything was: ? h ? min 
+
+Monthly cost: $?

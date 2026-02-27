@@ -1,0 +1,67 @@
+Implemented Step 7 only: tRPC router layer + Zod transport contracts.
+
+What I added/updated
+
+Added full task router with strict Zod input/output DTOs:
+
+task.create (OWNER/ADMIN)
+task.reassign (OWNER/ADMIN)
+task.list (member-scoped, paginated + sorted)
+task.updateStatus (member-scoped, service-enforced permissions)
+File: task.ts
+Upgraded organization router list endpoint to paginated/sorted DTO envelope:
+
+organization.listPublic now returns { items, pageInfo }
+supports page, pageSize, sortBy, sortOrder
+File: organization.ts
+Upgraded joinRequest router list endpoint to paginated/sorted DTO envelope:
+
+joinRequest.listPending now returns { items, pageInfo }
+supports page, pageSize, sortOrder
+File: join-request.ts
+Registered task router in app router:
+
+File: _app.ts
+Extended service/repository support for pagination/sorting (used by routers, still framework-agnostic):
+
+organization discoverable list + pending join-request list options
+task list options (offset, limit, sortBy, sortOrder)
+Files:
+organization-repository.ts
+task-repository.ts
+organization-service.ts
+task-service.ts
+Added/used task validation contracts for router inputs:
+
+task.ts
+index.ts
+Step 7 requirements check
+
+Routers present: auth, organization, joinRequest, task ✅
+Zod input/output schemas on procedures ✅
+Middleware composition for auth/role checks (protectedProcedure, memberProcedure, ownerAdminProcedure) ✅
+Pagination/sorting on list endpoints ✅
+Explicit DTO responses (no raw Prisma models leaked) ✅
+Domain errors consistently mapped via central tRPC mapping middleware ✅
+Validation
+
+npm run typecheck ✅
+npm run lint ✅ (0 warnings)
+npm run test ✅
+npm run build ✅
+
+8 files changed
++374
+-39
+Undo
+
+Review
+src/server/repositories/organization-repository.ts
+src/server/repositories/task-repository.ts
+src/server/services/organization-service.ts
+src/server/services/task-service.ts
+src/server/trpc/routers/_app.ts
+src/server/trpc/routers/join-request.ts
+src/server/trpc/routers/organization.ts
+src/server/trpc/routers/task.ts
+

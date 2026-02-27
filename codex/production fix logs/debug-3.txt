@@ -1,0 +1,34 @@
+You’re right. That raw JSON/regex payload is not user-friendly.
+
+Why it happened:
+
+Validation was correct (server-side Zod), but the implementation returned the raw validation payload string through tRPC.
+UI then displayed unknownError.message directly.
+So this is an implementation quality issue, not a prompt issue.
+I fixed it centrally:
+
+trpc.ts
+Added normalization in errorFormatter:
+For validation errors, it extracts the first human-readable message.
+Falls back to Invalid input. when needed.
+This removes raw regex/object dumps from user-facing errors across the app.
+Validation after fix:
+
+npm run lint passed
+npm run typecheck passed
+npm run build passed
+What you should do now:
+
+Rebuild/restart container:
+docker compose down
+docker compose up --build
+Retry registration with invalid password.
+You should now see only:
+Password must include uppercase, lowercase, and numeric characters.
+not the raw JSON/regex blob.
+
+1 file changed
+Undo
+
+Review
+codex/code/src/server/trpc/trpc.ts

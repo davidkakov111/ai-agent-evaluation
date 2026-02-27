@@ -1,0 +1,64 @@
+
+Findings (fixed, ordered by severity)
+
+High Security misconfiguration risk: NEXTAUTH_SECRET was optional even in production, which can weaken session integrity and cause unstable auth behavior across restarts.
+Fixed in config.ts by enforcing a strong secret in production.
+
+High Brute-force vulnerability: auth rate limiting was a no-op.
+Fixed in rate-limit.ts with an in-memory limiter (still overridable via setAuthRateLimiter), plus env controls in .env.example and docs in README.md.
+
+Medium User-enumeration timing leak: login returned early when user didn’t exist, making response timing distinguishable.
+Fixed with constant-time password verification fallback in auth-service.ts.
+
+Medium Authorization/data-exposure issue: employees could query organization member list (names/emails).
+Fixed at service + router boundaries in organization-service.ts and organization.ts.
+Also adjusted dashboard fetching to avoid employee-side member loading in dashboard/page.tsx.
+
+Medium Reliability bug: login form didn’t catch signIn exceptions, leaving UX in a bad state on network/runtime failure.
+Fixed in login-form.tsx.
+
+Low Logging/observability issue: warn logs were emitted via console.error, and all domain errors were logged noisily.
+Fixed in logger.ts and narrowed logging policy in map-error-to-trpc.ts.
+
+Low Domain consistency issue: seed data created a task assigned to ADMIN, conflicting with task-assignment rule (employees only).
+Fixed in seed.mjs.
+
+Test coverage updated for new permission boundary in app-router.test.ts.
+
+Architecture/design compliance check
+
+Prisma access remains in server/db + repositories/services only.
+tRPC routers still call services (not Prisma).
+Zod validation + domain error mapping remains coherent.
+No TypeScript any introduced.
+Quality gates run after fixes
+
+npm run typecheck passed
+npm run lint passed (--max-warnings=0)
+npm run test passed (16/16)
+npm run build passed
+Open policy question
+
+Admins can still approve join requests with OWNER role (current behavior). If you want stricter governance, I can enforce “only OWNER can grant OWNER.”
+
+14 files changed
++190
+-51
+Undo
+
+Review
+.env.example
+README.md
+prisma/seed.mjs
+src/app/dashboard/page.tsx
+src/features/auth/components/login-form.tsx
+src/features/tasks/components/task-list-panel.tsx
+src/server/auth/config.ts
+src/server/auth/rate-limit.ts
+src/server/errors/map-error-to-trpc.ts
+src/server/logging/logger.ts
+src/server/services/auth-service.ts
+src/server/services/organization-service.ts
+src/server/trpc/routers/app-router.test.ts
+src/server/trpc/routers/organization.ts
+

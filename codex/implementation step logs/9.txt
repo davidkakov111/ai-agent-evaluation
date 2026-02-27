@@ -1,0 +1,42 @@
+Implemented Step 9 (Testing, Quality Gates, and Regression Protection) and verified all gates pass.
+
+What I added
+
+Unit tests for task transitions + role ownership
+task-status-rules.ts
+task-status-rules.test.ts
+Service-layer invariants tests (join flow, one-org-only, cross-tenant denial, duplicate membership race handling)
+organization-service.test.ts
+API/tRPC permission + validation boundary tests
+app-router.test.ts
+Error mapping hardening so auth/authz middleware consistently returns mapped tRPC codes
+trpc.ts
+Vitest alias resolution for @/*
+vitest.config.ts
+CI pipeline
+.github/workflows/ci.yml
+Includes: prisma validate, typecheck, lint --max-warnings=0, test, build.
+Verification run
+
+npm run test ✅ (16/16 passing)
+npm run lint ✅
+npm run typecheck ✅
+npm run build ✅
+Next natural step is Step 10 (production readiness and hardening).
+
+
+8 files changed
++378
+-23
+Undo
+
+Review
+.github/workflows/ci.yml
+src/server/services/organization-service.test.ts
+src/server/services/task-service.ts
+src/server/services/task-status-rules.test.ts
+src/server/services/task-status-rules.ts
+src/server/trpc/routers/app-router.test.ts
+src/server/trpc/trpc.ts
+vitest.config.ts
+

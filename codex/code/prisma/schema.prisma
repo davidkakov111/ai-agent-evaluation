@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model User {
+  id                     String         @id @default(cuid())
+  email                  String         @unique
+  name                   String
+  passwordHash           String
+  emailVerified          DateTime?
+  image                  String?
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+  accounts               Account[]
+  sessions               Session[]
+  membership             Membership?
+  createdOrganizations   Organization[] @relation("OrganizationCreatedBy")
+  joinRequests           JoinRequest[]  @relation("JoinRequestCreatedBy")
+  reviewedJoinRequests   JoinRequest[]  @relation("JoinRequestReviewedBy")
+  assignedTasks          Task[]         @relation("TaskAssignedTo")
+  createdTasks           Task[]         @relation("TaskCreatedBy")
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  createdById  String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  createdBy    User          @relation("OrganizationCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+  memberships  Membership[]
+  joinRequests JoinRequest[]
+  tasks        Task[]
+
+  @@index([name])
+  @@index([createdAt])
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  organizationId String
+  role           Role
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+  @@index([organizationId, createdAt])
+}
+
+model JoinRequest {
+  id             String            @id @default(cuid())
+  userId         String
+  organizationId String
+  status         JoinRequestStatus @default(PENDING)
+  requestedRole  Role              @default(EMPLOYEE)
+  reviewedById   String?
+  reviewedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  user           User              @relation("JoinRequestCreatedBy", fields: [userId], references: [id], onDelete: Restrict)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  reviewedBy     User?             @relation("JoinRequestReviewedBy", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status, createdAt])
+  @@index([userId, status, createdAt])
+  @@index([organizationId, userId, createdAt])
+  // SQLite has no partial unique index support; single pending request is enforced in service logic.
+}
+
+model Task {
+  id             String     @id @default(cuid())
+  organizationId String
+  title          String
+  description    String?
+  assignedToId   String
+  createdById    String
+  status         TaskStatus @default(TODO)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assignedTo     User         @relation("TaskAssignedTo", fields: [assignedToId], references: [id], onDelete: Restrict)
+  createdBy      User         @relation("TaskCreatedBy", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, status, createdAt])
+  @@index([organizationId, assignedToId, status])
+  @@index([assignedToId, status, updatedAt])
+}

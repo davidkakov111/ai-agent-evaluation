@@ -1,0 +1,57 @@
+Implemented Step 1 only.
+
+What I changed
+
+Scaffoled a fresh Next.js App Router TypeScript app at repo root.
+Added strict TS guardrails in tsconfig.json:
+strict: true
+noUncheckedIndexedAccess: true
+exactOptionalPropertyTypes: true
+also set allowJs: false
+Added required scripts in package.json:
+lint, typecheck, test, build
+prisma:generate, prisma:migrate:dev, prisma:migrate:deploy, prisma:studio, prisma:validate
+Installed requested dependencies in package.json:
+@trpc/*, @tanstack/react-query, zod, prisma, @prisma/client, next-auth, @auth/prisma-adapter, bcrypt, vitest
+Added Prettier config:
+.prettierrc.json
+.prettierignore
+Updated .gitignore to include Prisma SQLite files, logs, coverage, env files, .next, node_modules.
+Added bootstrap test config vitest.config.ts.
+Added minimal Prisma baseline:
+prisma/schema.prisma
+.env.example
+Removed remote Google font dependency to make builds work in restricted/offline environments:
+src/app/layout.tsx
+src/app/globals.css
+Important note
+
+Prisma was initially installed as v7, but v7 changed datasource config flow and broke standard schema.prisma bootstrap. I pinned to prisma@6.16.2 + @prisma/client@6.16.2 for stable production workflow with SQLite.
+Validation run
+
+npm run prisma:validate ✅
+npm run prisma:generate ✅
+npm run typecheck ✅
+npm run lint ✅ (max warnings = 0)
+npm run test ✅ (--passWithNoTests for bootstrap phase)
+npm run build ✅ (ran successfully with elevated permissions due sandbox process limits)
+If you want, I’ll now implement Step 2 (clean architecture skeleton) only.
+
+
+10 files changed
++65
+-22
+Undo
+
+Review
+.env.example
+.gitignore
+.prettierignore
+.prettierrc.json
+package.json
+prisma/schema.prisma
+src/app/globals.css
+src/app/layout.tsx
+tsconfig.json
+vitest.config.ts
+

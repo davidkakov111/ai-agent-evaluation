@@ -1,0 +1,48 @@
+Step 10 is implemented and validated.
+
+Implemented
+
+Environment contract finalized in .env.example
+Added NODE_ENV
+Kept required runtime vars (DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, BCRYPT_SALT_ROUNDS)
+Production startup/migration scripts finalized in package.json
+Added setup
+Added start:prod (prisma migrate deploy + next start)
+Operational documentation replaced with production runbook in README.md
+Local run, quality gates, migration flow, SQLite backup note, v1 SQLite limits, Postgres migration path
+Structured server logging added in logger.ts
+Centralized tRPC error-path logging added in map-error-to-trpc.ts
+Safe App Router error boundaries added:
+error.tsx
+global-error.tsx
+Replaced ad-hoc server-page console.error with structured logging:
+dashboard/page.tsx
+organizations/page.tsx
+SQLite file ignores hardened in .gitignore
+Validation
+
+npm run prisma:validate passed
+npm run typecheck passed
+npm run lint passed with --max-warnings=0
+npm run test passed (16/16)
+npm run build passed
+This completes the final plan step and finalizes the app at production-readiness v1 level (with SQLite constraints documented explicitly).
+
+
+10 files changed
++253
+-26
+Undo
+
+Review
+.env.example
+.gitignore
+README.md
+package.json
+src/app/dashboard/page.tsx
+src/app/error.tsx
+src/app/global-error.tsx
+src/app/organizations/page.tsx
+src/server/errors/map-error-to-trpc.ts
+src/server/logging/logger.ts
+

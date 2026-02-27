@@ -1,0 +1,36 @@
+You’re right, the logs show the exact root cause.
+
+next-auth v4 does not allow Credentials sign-in with session.strategy: "database".
+That’s why you got CALLBACK_CREDENTIALS_JWT_ERROR and got redirected to /api/auth/error.
+
+I fixed it in your codex/code project:
+
+Switched auth session strategy to JWT and adjusted callbacks:
+config.ts
+Added JWT type augmentation for strict typing:
+next-auth.d.ts
+Validation after fix:
+
+npm run typecheck passed
+npm run build passed
+npm run lint --max-warnings=0 passed
+Also from your logs:
+
+Unique constraint failed on fields: (email) means you tried registering an already-existing email. That is expected behavior, not the auth crash.
+Run this now to apply the fix in Docker:
+
+docker compose down
+docker compose up --build
+If you want a clean DB (remove old users too):
+
+docker compose down -v
+docker compose up --build
+
+2 files changed
++27
+-8
+Undo
+
+Review
+codex/code/src/server/auth/config.ts
+codex/code/src/types/next-auth.d.ts

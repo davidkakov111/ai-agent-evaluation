@@ -1,0 +1,69 @@
+Implemented Step 5 only: authorization policies + multi-tenant invariants.
+
+What I changed
+
+Added reusable policy guards with the requested semantics:
+
+requireAuth, requireMembership, requireRole, requireOwnerOrAdminRole, org-scope check
+File: auth-policy.ts
+Exports: index.ts
+Added org/join-request domain validation schemas:
+
+createOrganization, requestJoin, approveJoinRequest, rejectJoinRequest
+Files: organization.ts, index.ts
+Implemented tenant-scoped repository for org + join-request flows:
+
+All join-request reads/updates for review are scoped by organizationId
+File: organization-repository.ts
+Exported in: index.ts
+Implemented OrganizationService invariants:
+
+Create org only if user has no membership
+Auto-create creator membership as OWNER
+Request join only if user has no membership
+Approve/reject only by OWNER|ADMIN in same org
+Approval checks target user still has no membership before creating membership
+No “leave organization” operation added
+File: organization-service.ts
+Wired new service into service container:
+
+File: services/index.ts
+Extended tRPC procedure layers with reusable guarded procedures:
+
+protectedProcedure, memberProcedure, ownerAdminProcedure
+File: trpc.ts
+Exported via: index.ts
+Added minimal routers to exercise Step 5 policies/invariants:
+
+organization.listPublic, organization.create, organization.requestJoin
+joinRequest.listPending, joinRequest.approve, joinRequest.reject
+Files: organization.ts, join-request.ts, _app.ts
+Validation
+
+npm run typecheck passed
+npm run lint passed (0 warnings)
+npm run test passed
+npm run build passed
+Next step can be Step 6 (task/organization business services expansion and task-state logic).
+
+
+13 files changed
++722
+-10
+Undo
+
+Review
+src/lib/validation/index.ts
+src/lib/validation/organization.ts
+src/server/policies/auth-policy.ts
+src/server/policies/index.ts
+src/server/repositories/index.ts
+src/server/repositories/organization-repository.ts
+src/server/services/index.ts
+src/server/services/organization-service.ts
+src/server/trpc/index.ts
+src/server/trpc/routers/_app.ts
+src/server/trpc/routers/join-request.ts
+src/server/trpc/routers/organization.ts
+src/server/trpc/trpc.ts
+

@@ -1,0 +1,38 @@
+You’re correct. This was my implementation mistake, not your prompt.
+
+Your prompt specified the 3 states and implied forward flow:
+TODO -> IN_PROGRESS -> DONE.
+
+I had implemented a reopen transition (DONE -> IN_PROGRESS) from an earlier assumption. I fixed it now.
+
+Updated files:
+
+task-status-rules.ts
+DONE now has no next states.
+task-status-rules.test.ts
+tests updated: DONE -> IN_PROGRESS is now invalid.
+task-list-panel.tsx
+UI no longer offers transition from DONE.
+Behavior now:
+
+New task starts in TODO.
+Can move only TODO -> IN_PROGRESS.
+Then only IN_PROGRESS -> DONE.
+DONE is terminal.
+Validation:
+
+lint passed
+test passed
+build passed
+If you want, I can also add a small UI hint near status controls: “Done tasks are final.”
+
+
+3 files changed
++4
+-4
+Undo
+
+Review
+codex/code/src/features/tasks/components/task-list-panel.tsx
+codex/code/src/server/services/task-status-rules.test.ts
+codex/code/src/server/services/task-status-rules.ts

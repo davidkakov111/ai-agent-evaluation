@@ -1,0 +1,51 @@
+
+Dockerization is implemented and validated end-to-end.
+
+Created/Updated Files
+
+Production multi-stage image: Dockerfile
+Container startup with automatic migrations: docker/entrypoint.sh
+Build context hardening: .dockerignore
+Compose stack: docker-compose.yaml
+Docker env template: .env.docker.example
+Runbook instructions: README.md
+Runtime-safe auth secret enforcement (fix for container build/runtime): src/server/auth/config.ts
+What this setup does
+
+docker compose up builds and starts the app.
+On container start, prisma migrate deploy runs automatically before next start.
+SQLite DB persists in named volume taskflow_sqlite.
+App runs in production mode with healthcheck configured.
+Container starts via dumb-init; entrypoint drops privileges to nextjs user after volume ownership fix.
+Environment setup
+
+cp .env.docker.example .env
+Set a strong NEXTAUTH_SECRET (>= 32 chars) in .env
+docker compose up
+Verification performed
+
+docker compose config validated.
+docker compose build taskflow succeeded.
+docker compose up -d succeeded.
+Logs showed:
+Prisma schema loaded
+No pending migrations to apply
+Next.js server ready
+docker compose ps showed service healthy.
+Production risks and fixes
+
+Fixed: strict auth secret guard previously broke image builds by triggering during next build; now enforced at production runtime only.
+Fixed: runtime logs noise (npm update notifier) disabled in container.
+Known v1 constraint: SQLite is single-writer/file-based, not suitable for multi-instance horizontal scale; already documented in README.
+
+4 files changed
++27
+-3
+Undo
+
+Review
+.dockerignore
+Dockerfile
+README.md
+src/server/auth/config.ts
+

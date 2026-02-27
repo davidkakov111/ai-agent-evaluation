@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #fffaf0;
+  --bg-soft: #ffe6c7;
+  --ink: #1e1b16;
+  --ink-soft: #564f45;
+  --brand: #ff6b35;
+  --brand-deep: #cb3f13;
+  --card: #fffcf6;
+  --line: #e3c9a5;
+}
+
+@theme inline {
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+  --font-sans: "Trebuchet MS", "Lucida Sans", "Gill Sans", sans-serif;
+  --font-mono: "Courier New", "Andale Mono", monospace;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 5% 10%, #ffd9ab 0 10%, transparent 45%),
+    radial-gradient(circle at 95% 5%, #ffc790 0 8%, transparent 42%),
+    linear-gradient(135deg, var(--bg) 0%, #fff1dc 55%, var(--bg-soft) 100%);
+  color: var(--ink);
+  font-family: var(--font-sans);
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  margin: 0 auto;
+  width: min(1100px, calc(100% - 2rem));
+  padding: 1.25rem 0 2.5rem;
+}
+
+.surface {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 10px 35px rgb(73 41 7 / 10%);
+}
+
+.button {
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.button-brand {
+  background: linear-gradient(180deg, var(--brand) 0%, var(--brand-deep) 100%);
+  color: #fffaf5;
+}
+
+.button-outline {
+  border-color: var(--line);
+  color: var(--ink);
+  background: #fff;
+}
+
+.input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.6rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.stack {
+  display: grid;
+  gap: 0.85rem;
+}
