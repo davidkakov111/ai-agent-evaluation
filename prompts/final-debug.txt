@@ -1,0 +1,19 @@
+Review the current codebase.
+
+Check for:
+- Bugs
+- TypeScript type safety issues
+- Security vulnerabilities
+- Architecture problems
+- Performance risks
+- Missing edge case handling
+
+Also check:
+- Whether code follows the previously defined architecture and design decisions
+- Whether there are redundant or unnecessary implementations
+
+If you find problems:
+- Clearly explain why they are problems
+- Provide corrected production-quality code for the affected files only
+- Do not rewrite the entire project unless absolutely necessary
+

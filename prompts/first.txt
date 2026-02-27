@@ -1,0 +1,157 @@
+You are a senior full-stack TypeScript engineer.
+
+I want you to design and implement a production-quality multi-tenant task management SaaS application.
+
+IMPORTANT CONSTRAINTS:
+- Strict TypeScript (no `any`)
+- No ESLint warnings
+- Clean architecture and separation of concerns
+- Do not overengineer solutions
+- Prefer using existing mature libraries and solutions instead of reinventing functionality
+- Follow best practices for Next.js App Router and tRPC
+- All input validation must use Zod
+- Prisma must be used for DB modeling
+- SQLite database (file-based)
+- Proper error handling everywhere
+- No placeholder pseudo-code
+- The system must be realistically extensible
+
+-----------------------------------------
+PROJECT IDEA
+-----------------------------------------
+
+Build a multi-tenant task management platform called "TaskFlow".
+
+User Accounts:
+- Users can register and log in using:
+  - Email
+  - Name
+  - Password
+
+Authentication Rules:
+- Passwords must be securely hashed using established libraries
+- Use standard session or token-based authentication approaches
+
+-----------------------------------------
+ORGANIZATION SYSTEM
+-----------------------------------------
+
+Users can:
+- Create organizations
+- The creator of an organization automatically becomes OWNER
+
+Organization Membership Rules:
+- Users can request to join an organization
+- Owners and admins can approve or reject join requests
+
+After approval:
+- User is assigned a role inside the organization:
+  - OWNER
+  - ADMIN
+  - EMPLOYEE
+
+Important Constraints:
+- One user can belong to ONLY ONE organization
+- Once a user joins an organization, they cannot leave it
+
+Use existing authorization patterns and libraries where possible.
+
+-----------------------------------------
+TASK MANAGEMENT FEATURES
+-----------------------------------------
+
+Inside an organization:
+
+Owners and admins can:
+- Create tasks
+- Assign tasks to employees
+- View all tasks and assignments
+- Modify task status
+
+Employees can:
+- View only their assigned tasks
+- Update only the status of their own tasks
+
+Task States:
+- TODO
+- IN_PROGRESS
+- DONE
+
+Task Data Includes:
+- Title
+- Description
+- Assigned employee
+- Status
+- Organization scope
+- Timestamps
+
+-----------------------------------------
+JOIN REQUEST SYSTEM
+-----------------------------------------
+
+Users must:
+1. Request to join an organization
+2. Wait for approval
+3. Receive role assignment
+
+Join request states:
+- PENDING
+- APPROVED
+- REJECTED
+
+-----------------------------------------
+TECH STACK
+-----------------------------------------
+
+- Next.js (latest stable, App Router)
+- TypeScript
+- tRPC
+- Prisma
+- SQLite
+- Zod
+- Use well-established authentication libraries where appropriate
+- Use server actions or route handlers properly
+- Avoid deprecated patterns
+
+-----------------------------------------
+GENERAL ENGINEERING PHILOSOPHY
+-----------------------------------------
+
+- Prefer using existing production-tested solutions whenever possible
+- Keep code concise and maintainable
+- Do not build custom solutions for problems that already have reliable libraries available
+
+-----------------------------------------
+TESTING STRATEGY
+-----------------------------------------
+
+Include:
+- Unit tests for task state transitions
+- Separation of business logic from API layer
+
+-----------------------------------------
+TASK
+-----------------------------------------
+
+First, DO NOT write any code.
+
+Instead:
+
+Generate a **detailed, production-level 10-step implementation plan** to build this system from scratch to completion.
+
+This plan will be used later to implement the project step-by-step, so:
+- Each step must be detailed enough to allow independent implementation.
+- Each step should logically build upon previous steps.
+- The steps must be consistent so that following them sequentially will produce this working application.
+
+Each step must:
+- Clearly specify which layers are affected (DB, API, UI, services, background logic, etc.)
+- Mention risks, edge cases, or architectural considerations
+- Prefer usage of existing libraries and established solutions when applicable
+- Maintain architectural coherence with the overall system design
+
+The plan should be:
+- Detailed enough to act as a real engineering execution roadmap
+- Practical and realistic for production-quality software development
+
+Be concise but technically precise.

@@ -1,0 +1,34 @@
+Now dockerize the entire project so it can be started from zero using Docker Compose.
+
+Generate:
+
+1. Production-ready Dockerfile
+2. docker-compose.yaml
+3. Any required configuration files
+4. Environment variable setup instructions
+5. Database migration handling inside the container
+
+Requirements:
+
+- The application must start with:
+  docker compose up
+
+- Prisma migrations must run automatically during container startup
+
+- Follow production best practices:
+  - Multi-stage builds if applicable
+  - Minimal final image size
+  - Proper dependency installation separation
+  - Proper Node.js production configuration
+
+- Do NOT use development-only patterns.
+
+- Do not change project architecture unless absolutely required.
+
+Verify that the Docker setup can:
+- Run database migrations
+- Start backend services
+- Serve frontend application
+- Handle environment variables correctly
+
+If any production risks exist, explain them and fix them.
