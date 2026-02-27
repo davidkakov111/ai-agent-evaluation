@@ -15,7 +15,7 @@ IMPORTANT CONSTRAINTS:
 - Proper error handling everywhere
 - No placeholder pseudo-code
 - The system must be realistically extensible
-
+- Use .gitignore file correctly
 -----------------------------------------
 PROJECT IDEA
 -----------------------------------------

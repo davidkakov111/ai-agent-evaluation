@@ -2,7 +2,7 @@ Now dockerize the entire project so it can be started from zero using Docker Com
 
 Generate:
 
-1. Production-ready Dockerfile
+1. Production-ready Dockerfile, dockerignore file 
 2. docker-compose.yaml
 3. Any required configuration files
 4. Environment variable setup instructions
