@@ -37,7 +37,7 @@ Ignore everything else if these are low:
         For Steps 9 and 10, I used only the third-best reasoning option.
     This makes the comparison somewhat unfair to GPT compared to other paid models, but I didn’t want to spend $20 just to complete the test using the model’s maximum capability.
 
-    It created a Prisma seed file, which is useful. I didn’t ask for it, but it was a nice touch from Codex — I really liked that.
+    It created a Prisma seed file and CI/CD verifications & build, which is useful. I didn’t ask for it, but it was a nice touch from Codex — I really liked that.
 
     ----------------------------------------
     ERROR
@@ -75,6 +75,9 @@ Ignore everything else if these are low:
         'Invalid task status transition.'
     The AI responded and resolved it: debug-5.txt
     ----------------------------------------
+
+    GENERAL NOTE: Its not a problem, but good to knwo htet ai will do what you ask from it and not more, like i didnt asked it to write comments so it skipp the comments etc.
+    
 
 Time to implement evrything was: 1 h 15 min 
 
