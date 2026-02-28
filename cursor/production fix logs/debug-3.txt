@@ -1,0 +1,5 @@
+Change applied.
+Root cause: This was an implementation issue. The plan didn’t spell out which queries to invalidate on approve. The implementation should have treated approving a join request as adding a member and invalidated organization.members accordingly.
+Fix: Added utils.organization.members.invalidate() in the approve mutation’s onSuccess. That triggers a refetch of the members list used by CreateTaskForm and TaskList, so:
+The task assigner section appears as soon as the first employee is approved.
+Newly approved employees show up in the assignee dropdown right away.

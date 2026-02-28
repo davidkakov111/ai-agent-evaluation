@@ -1,0 +1,6 @@
+Summary of updates:
+Root cause: This was mainly an implementation gap. The plan said "Request to join for orgs user doesn't belong to" and "Create organization" form, but didn’t say to hide/disable them when the user already has an org. The UI should have used session.user.organizationId to adjust what’s shown.
+Changes made:
+Create organization form – Hidden when session?.user?.organizationId is set.
+Join buttons – Replaced with "Already in an organization" when the user already belongs to an org.
+Page copy – Switched from "Create an organization or request to join one" to "Browse organizations" when the user has an org.

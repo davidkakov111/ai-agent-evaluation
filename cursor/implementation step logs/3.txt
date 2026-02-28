@@ -1,0 +1,30 @@
+Step 3 is done. Summary:
+Step 3: Domain Errors and Logging – Complete
+Completed actions
+Domain error hierarchy (src/server/errors/domain-error.ts)
+Base: DomainError with code, message, optional details, cause
+Subclasses: UnauthorizedDomainError, ForbiddenDomainError, NotFoundDomainError, ConflictDomainError, RateLimitedDomainError, ValidationDomainError, PreconditionFailedDomainError, InternalDomainError
+Exported types: DomainErrorCode, DomainErrorDetails
+Error-to-tRPC mapping (src/server/errors/map-error-to-trpc.ts)
+Maps DomainError.code to tRPC codes:
+UNAUTHORIZED → UNAUTHORIZED
+FORBIDDEN → FORBIDDEN
+NOT_FOUND → NOT_FOUND
+CONFLICT → CONFLICT
+RATE_LIMITED → TOO_MANY_REQUESTS
+VALIDATION → BAD_REQUEST
+PRECONDITION_FAILED → PRECONDITION_FAILED
+INTERNAL → INTERNAL_SERVER_ERROR
+Passes through TRPCError unchanged
+Logs RATE_LIMITED, INTERNAL, and unexpected errors
+For unexpected errors, returns generic "An unexpected error occurred." to avoid leaking internals
+Logger (src/server/logging/logger.ts)
+Structured JSON logging for error, warn, info
+Comment added to avoid logging passwords or tokens
+Exports (src/server/errors/index.ts)
+Re-exports all error classes and mapErrorToTRPC
+Verification
+npm run typecheck – passed
+npm run lint – passed
+Note: Zod validation messages are handled in the tRPC error formatter (Step 5), not in mapErrorToTRPC, which only maps errors thrown from procedures.
+Next step: Step 4: Authentication (Auth.js + Credentials).

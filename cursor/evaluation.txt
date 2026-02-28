@@ -1,0 +1,82 @@
+⭐ AI Developer Productivity Scorecard:
+
+| Metric                   | Question To Evaluate                                                                       | Score (0-10) | Why?
+| ------------------------ | ------------------------------------------------------------------------------------------ | ------------ |--------------------------------------------------------------------
+| Idea Match               | Did the AI correctly implement the requested project idea and features?                    |              |
+| Architecture Quality     | Is the project structure clean, scalable, and logically separated (DB, API, UI, services)? |              |
+| Security + Authorization | Are roles, permissions, and data isolation correctly enforced in backend logic?            |              |
+| TypeScript Quality       | Is the code strongly typed, readable, and free of type safety shortcuts?                   |              |
+| Code Quality             | Is the code clean, maintainable, and not unnecessarily complex?                            |              |
+| Debugging Skill          | Did the AI correctly identify and fix bugs during review phase?                            |              |
+| Deployment Quality       | Does Docker + startup setup work with minimal manual fixing?                               |              |
+| Use Existing Solutions   | Did the AI use established libraries instead of reinventing functionality?                 |              |
+| Autonomy                 | How independently did the AI complete tasks without you guiding implementation?            |              |
+
+Final Score =
+    ( Idea Match × 0.25 ) +
+    ( Autonomy × 0.25 ) +
+    ( Architecture Quality × 0.15 ) +
+    ( Security + Authorization × 0.15 ) +
+    ( Code Quality × 0.10 ) +
+    ( Debugging Skill × 0.05 ) +
+    ( Deployment Quality × 0.03 ) +
+    ( TypeScript Quality × 0.04 ) +
+    ( Use Existing Solutions × 0.03 )
+
+Ignore everything else if these are low:
+    Idea Match
+    Autonomy
+    Security
+
+⭐ Most Important Real Productivity Question (Answer Separately)
+    How much did I personally need to correct, rewrite, or guide the AI to reach the final desired result?
+
+Planning Score: ? / 10
+    Description:
+
+Implementation Score: ? / 10
+    Description:
+
+Any other notes/observations?
+    It created a plan file in the editor with a visual, diagram-style architecture drawing. I could highlight elements and add them to the chat so the AI could act on them. It was easy to use, much better integrated than VS Code, and the AI was very fast.
+    It has a built-in browser inside the editor.
+    It frequently asked for confirmation with recommended options.
+    It took one hour to build the idea following the evaluation plan.
+
+    --------------------------------------------------------------------
+    BUG 
+
+    A task can be reassigned even if it has already been completed. 
+    The reason was a planning mistake.
+    AI response and resolution prompt: debug-1.txt
+    --------------------------------------------------------------------
+    --------------------------------------------------------------------
+    BAD UX
+
+    If I belong to an organization, I still see join buttons for others. These should be disabled since I can’t join another organization once I’m already in one.
+    The organization creation form should also be hidden if I already belong to an organization, as it’s redundant and misleading.
+    The reason was an implementation mistake.
+    AI response and resolution prompt: debug-2.txt
+    --------------------------------------------------------------------
+    --------------------------------------------------------------------
+    BAD UX
+
+    After I approve the first employee request, the task assigner section does not appear automatically — only after a page reload.
+    If the task assigner is already visible and I approve another user, the new user does not appear in the dropdown. We likely need to refresh the employees array.
+    The reason was an implementation mistake.
+    AI response and resolution prompt: debug-3.txt
+    --------------------------------------------------------------------
+    --------------------------------------------------------------------
+    BAD UX
+
+    After creating an organization, the user session is not updated until a page reload.
+    This causes two issues:
+        The dashboard shows only the employee view until reload.
+        The header misses the dashboard link until reload.
+    The reason was an implementation mistake.
+    AI response and resolution prompt: debug-4.txt
+    --------------------------------------------------------------------
+
+Time to implement evrything was: 2 h 30 min 
+
+Monthly cost: $23

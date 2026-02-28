@@ -1,0 +1,43 @@
+Step 7 is done. Summary:
+Step 7: Task Management – Complete
+Completed actions
+Validation schemas (src/lib/validation/task.ts)
+createTaskInputSchema: title (1–200 chars), description (optional, max 5000), assignedToUserId
+updateTaskStatusInputSchema: taskId, status (TODO | IN_PROGRESS | DONE)
+reassignTaskInputSchema: taskId, assignedToUserId
+listTasksInputSchema: status (optional), limit (optional)
+Task status rules (src/server/services/task-status-rules.ts)
+canTransitionTaskStatus: TODO→IN_PROGRESS, IN_PROGRESS→DONE; same status not allowed
+canRoleUpdateTask: OWNER/ADMIN can update any task; EMPLOYEE only their own
+getAllowedTaskStatusTransitions: returns allowed next statuses
+Task repository (src/server/repositories/task-repository.ts)
+createTask, findTaskByIdInOrganization
+listTasksForOrganization, listTasksForAssignee (with status filter, sort)
+updateTaskStatusAtomic: updateMany with WHERE status = currentStatus
+reassignTask, findMembershipByUserAndOrganization
+Task service (src/server/services/task-service.ts)
+createTask: owner/admin only; assignee must be org EMPLOYEE
+listTasks: member only; EMPLOYEE sees only assigned; owner/admin see all
+updateTaskStatus: member only; canRoleUpdateTask and canTransitionTaskStatus; optimistic lock via updateTaskStatusAtomic
+reassignTask: owner/admin only; new assignee must be org EMPLOYEE
+Task router (src/server/trpc/routers/task.ts)
+task.create: ownerAdminProcedure
+task.reassign: ownerAdminProcedure
+task.list: memberProcedure (paginated)
+task.updateStatus: memberProcedure
+Service wiring
+createServices now includes task: TaskService
+Edge cases handled
+Status race: updateTaskStatusAtomic uses WHERE status = currentStatus; returns 0 if status changed
+Reassign to non-employee: findMembershipByUserAndOrganization + role check
+Employee updates another’s task: canRoleUpdateTask returns false → ForbiddenDomainError
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Usage
+trpc.task.create.useMutation() – create task (owner/admin)
+trpc.task.list.useQuery() – list tasks (member; filtered by role)
+trpc.task.updateStatus.useMutation() – update status (member; own tasks for employees)
+trpc.task.reassign.useMutation() – reassign task (owner/admin)
+Next step: Step 8: UI – Auth and Layout.

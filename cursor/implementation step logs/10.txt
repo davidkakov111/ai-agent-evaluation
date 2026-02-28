@@ -1,0 +1,22 @@
+Step 10 is done. Summary of changes:
+Unit tests
+src/server/services/task-status-rules.test.ts
+getAllowedTaskStatusTransitions: TODO→IN_PROGRESS, IN_PROGRESS→DONE, DONE→[]
+canTransitionTaskStatus: valid transitions, same-status rejection, invalid transitions
+canRoleUpdateTask: OWNER/ADMIN can update any task; EMPLOYEE only own tasks
+src/server/services/organization-service.test.ts
+createOrganization when user has no membership
+createOrganization rejects when user already has membership
+Configuration
+vitest.config.ts: @ alias aligned with tsconfig.json
+package.json: test and test:watch scripts already present
+Lint and typecheck
+Removed unused TaskStatus import in task-status-rules.test.ts
+ESLint: 0 warnings
+TypeScript: strict mode, no any
+.gitignore
+.env*, *.db, node_modules, .next, coverage are ignored
+README.md
+Setup: npm install, cp .env.example .env, npm run prisma:migrate:dev, npm run prisma:seed, npm run dev
+Scripts and tech stack overview
+All 17 tests pass, lint and typecheck succeed.

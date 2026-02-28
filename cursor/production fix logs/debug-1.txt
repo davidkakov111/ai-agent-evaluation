@@ -1,0 +1,42 @@
+What’s going on
+reassignTask in task-service.ts does not look at the task status. It only checks:
+Task exists
+New assignee is in the org
+New assignee has role EMPLOYEE
+So reassignment is allowed for any task, including when status === "DONE".
+By contrast, updateTaskStatus uses canTransitionTaskStatus, which blocks status changes when the task is DONE.
+Root cause
+Layer	What happened
+Initial prompt	Did not say that completed tasks should be immutable or that reassignment should be blocked for DONE tasks.
+Plan (Step 7)	Describes reassign as: "verify task exists; verify new assignee is employee in org; reassign" — no mention of task status.
+Implementation	Matches the plan: no status check in reassignTask.
+So the behavior comes from underspecification in the plan, not from a mistake in the implementation.
+Suggested fix
+Add a status check in reassignTask so completed tasks cannot be reassigned:
+// In reassignTask, after fetching the task:if (task.status === "DONE") {  throw new PreconditionFailedDomainError(    "Cannot reassign a completed task.",  );}
+Or introduce a shared rule in task-status-rules.ts, e.g. canReassignTask(status), and use it in the service. 
+
+
+The issue is mainly a planning oversight, not the initial prompt.
+Responsibility
+Layer	Role
+Initial prompt	Describes the high-level goal (e.g. “multi-tenant task management”). It usually doesn’t spell out every rule like “no reassigning completed tasks.”
+Plan	Turns that into concrete requirements and edge cases. It should define what’s allowed in each task state.
+Why it’s a planning mistake
+The plan already defines a clear lifecycle:
+Status transitions: TODO → IN_PROGRESS → DONE
+DONE has no outgoing transitions (terminal state)
+From that, a planner should infer that completed tasks are effectively final and apply that to other operations, including reassignment. The plan should have explicitly said something like:
+> “Reassign only for tasks with status TODO or IN_PROGRESS; block reassignment when status is DONE.”
+Summary
+Initial prompt: Not responsible. It’s reasonable to assume the plan will cover lifecycle rules.
+Plan: Responsible. It should have extended the DONE-terminal-state logic to reassignment.
+Implementation: Correct given the plan; it followed what was specified.
+So the fix belongs in the plan: add a rule that reassignment is disallowed for completed tasks.
+
+
+Reassignment is now blocked for completed tasks in two places:
+Backend (task-service.ts): reassignTask throws PreconditionFailedDomainError with "Cannot reassign a completed task." when task.status === "DONE".
+Frontend (task-card.tsx): The Reassign dropdown is hidden when task.status === "DONE", so users don’t see the option.
+Typecheck and tests both pass.
+

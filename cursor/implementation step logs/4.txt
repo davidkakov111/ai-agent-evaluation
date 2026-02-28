@@ -1,0 +1,45 @@
+Step 4 is done. Summary:
+Step 4: Authentication (Auth.js + Credentials) – Complete
+Completed actions
+Validation schemas (src/lib/validation/)
+common.ts: emailSchema, nameSchema, passwordSchema (8–72 chars)
+auth.ts: loginInputSchema, registerInputSchema (password must include uppercase, lowercase, number)
+Password utilities (src/server/auth/password.ts)
+hashPassword, verifyPassword with bcrypt (cost factor 12, configurable via BCRYPT_SALT_ROUNDS)
+Auth repository (src/server/repositories/auth-repository.ts)
+createUser, findUserByEmail, findMembershipByUserId
+Auth service (src/server/services/auth-service.ts)
+register: rate limit, hash password, create user; handle unique violation
+authenticateWithPassword: rate limit, verify password, return user or null (constant-time with dummy hash)
+getSessionMembership: load organizationId and role for session
+Rate limiting (src/server/auth/rate-limit.ts)
+In-memory limiter for login (10/min) and register (5/min)
+Configurable via AUTH_RATE_LIMIT_WINDOW_MS, AUTH_LOGIN_MAX_ATTEMPTS, AUTH_REGISTER_MAX_ATTEMPTS
+Auth.js config (src/server/auth/config.ts)
+PrismaAdapter, CredentialsProvider
+JWT session strategy
+Session callback: attach organizationId and role from membership
+Production check for NEXTAUTH_SECRET (min 32 chars)
+Auth API route (src/app/api/auth/[...nextauth]/route.ts)
+NextAuth handler for GET/POST
+NextAuth types (src/types/next-auth.d.ts)
+Extended Session and User with id, organizationId, role
+Extended JWT with userId
+Registration
+Server action registerAction in src/app/actions/register.ts
+RegisterForm calls action, then signIn on success
+UI
+LoginForm, RegisterForm
+/login, /register with redirectIfAuthenticated
+Home page: sign-in/create-account when unauthenticated, continue when authenticated
+Placeholder /organizations, /dashboard for redirects
+AuthSessionProvider in root layout
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Flow
+Register: form → registerAction → AuthService.register → redirect to login or auto sign-in
+Login: form → signIn("credentials") → Auth.js → AuthService.authenticateWithPassword
+Session: JWT stores userId; session callback loads membership and adds organizationId, role
+Next step: Step 5: tRPC setup and context

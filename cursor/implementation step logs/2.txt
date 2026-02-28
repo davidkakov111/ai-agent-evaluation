@@ -1,0 +1,40 @@
+Step 2 is done. Summary:
+Step 2: Prisma Schema and SQLite Database – Complete
+Completed actions
+Prisma schema (prisma/schema.prisma)
+Enums: Role (OWNER, ADMIN, EMPLOYEE), TaskStatus (TODO, IN_PROGRESS, DONE), JoinRequestStatus (PENDING, APPROVED, REJECTED)
+User: id, email (unique), name, passwordHash, emailVerified?, image?, timestamps; relations to Account, Session, Membership, JoinRequest, Task
+Account, Session, VerificationToken: Auth.js/Prisma adapter models
+Organization: id, name, slug (unique), createdById, timestamps
+Membership: userId (unique), organizationId, role; unique(userId, organizationId)
+JoinRequest: userId, organizationId, status, requestedRole, reviewedById?, reviewedAt?; indexes on (organizationId, status), (userId, status), (organizationId, userId)
+Task: organizationId, title, description?, assignedToId, createdById, status; indexes on (organizationId, status), (assignedToId, status)
+better-sqlite3
+Installed better-sqlite3, @prisma/adapter-better-sqlite3, @types/better-sqlite3
+DB client (src/server/db/client.ts)
+Uses PrismaBetterSqlite3 adapter with timestampFormat: "unixepoch-ms"
+Singleton Prisma client for dev
+Migration
+prisma migrate dev --name init applied
+SQLite DB at prisma/dev.db
+Seed script (prisma/seed.mjs)
+Seeds: owner, admin, employee, candidate
+Acme organization with memberships
+Pending join request for candidate
+Sample tasks (TODO, IN_PROGRESS, DONE)
+Scripts: prisma:seed, setup
+Build
+Build script runs prisma:generate before next build
+Verification
+npm run prisma:generate – passed
+npm run prisma:migrate:dev – passed
+npm run prisma:seed – passed
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Seed users
+owner@taskflow.local / Password123!
+admin@taskflow.local / Password123!
+employee@taskflow.local / Password123!
+candidate@taskflow.local / Password123! (pending join request)
+Next step: Step 3: Domain Errors and Logging.

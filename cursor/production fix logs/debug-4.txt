@@ -1,0 +1,11 @@
+Here’s what was going on and what changed.
+Root cause
+This was an implementation issue. The plan didn’t mention session refresh after org creation. The implementation should have known that:
+NextAuth keeps a client-side session cache in SessionProvider.
+useSession() reads from that cache.
+Creating an org changes membership in the DB, but the client cache is not updated automatically.
+router.replace() and router.refresh() only re-run RSC; they do not refetch the NextAuth session.
+So DashboardNav and DashboardContent kept using the old session (no organizationId / role) until a full reload.
+Fix
+updateSession() from useSession() is now called after a successful org creation. That refetches the session from /api/auth/session before navigating to /dashboard, so the client cache has the new membership before the dashboard renders.
+Change: await updateSession() in the create mutation’s onSuccess before router.replace("/dashboard").

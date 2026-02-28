@@ -1,0 +1,34 @@
+Step 1 is done. Summary:
+Step 1: Project Scaffolding and Base Configuration – Complete
+Completed actions
+Next.js project
+App Router, TypeScript, Tailwind, ESLint, src/ directory
+Dependencies
+Production: @trpc/server, @trpc/client, @trpc/react-query, @trpc/tanstack-react-query, @tanstack/react-query, prisma, @prisma/client, zod, next-auth, @auth/prisma-adapter, bcrypt, superjson
+Dev: @types/bcrypt, vitest, @vitest/coverage-v8, dotenv
+Configuration
+tsconfig.json: strict: true, path alias @/* → ./src/*
+ESLint: eslint . --max-warnings 0
+Vitest config with path alias
+Scripts
+lint, typecheck, test, prisma:generate, prisma:migrate:dev, prisma:migrate:deploy, prisma:studio
+Folder structure
+src/app/ – Next.js pages
+src/server/ – db, auth, services, repositories, policies, errors, trpc, logging
+src/lib/ – validation
+src/features/ – auth, organizations, tasks, join-requests
+prisma/ – schema and migrations
+Prisma
+SQLite datasource
+Prisma 7 config in prisma.config.ts (no url in schema)
+DB client in src/server/db/client.ts
+.gitignore
+.env*, *.db, *.db-journal, .turbo
+.env.example
+DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run test – passed (no tests yet)
+npm run build – passed
+You can move on to Step 2: Prisma Schema and SQLite Database to add models and migrations.

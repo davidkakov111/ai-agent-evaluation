@@ -1,0 +1,36 @@
+Here’s the code review summary and what was changed.
+Code Review Summary
+Fixes applied
+1. UpdateStatusSelect & ReassignSelect – mutation error handling
+Issue: Failed mutations were not surfaced to the user.
+Change: Added inline error display and reset() before each mutation so previous errors are cleared on retry.
+2. TaskCard – assignee label for current user
+Issue: Employees saw a truncated ID instead of “You” for their own tasks.
+Change: When assignedToId === userId, the label now shows “You”.
+Architecture and design
+Repository pattern: Services use repositories; no direct Prisma usage in services.
+Policy layer: requireAuth, requireMembership, requireOwnerOrAdminRole used consistently.
+Domain errors: Typed hierarchy mapped to tRPC error codes.
+Zod validation: All tRPC inputs validated via .input(schema).
+Security
+Auth: Rate limiting on login/register; bcrypt with configurable salt rounds; no user enumeration on login.
+Authorization: Procedures use protectedProcedure, memberProcedure, ownerAdminProcedure as intended.
+Input validation: Zod schemas on all tRPC inputs; Prisma used for parameterized queries (no raw SQL).
+Note: In-memory rate limiter is per-process; with multiple instances, limits are per instance, not global.
+Type safety
+Strict TypeScript; no any.
+SessionUser and MemberUser used correctly.
+ctx.user and ctx.member are correctly typed in procedures.
+Edge cases
+Task status transitions enforced in task-status-rules.ts.
+Optimistic locking in updateTaskStatusAtomic for concurrent updates.
+Org creation rejects users who already have a membership.
+Join requests reject users who already have a membership or a pending request.
+Task assignment restricted to employees in the same organization.
+Performance
+Prisma client is a singleton.
+createServices() runs per request; cost is low and keeps services stateless.
+Pagination used for list endpoints.
+Minor notes (no changes)
+STATUS_LABELS: Defined in both TaskCard and UpdateStatusSelect; could be extracted to a shared constant.
+ctx.user vs ctx.member: Routers use ctx.user even where ctx.member exists; both are valid since the middleware guarantees membership for ownerAdminProcedure.

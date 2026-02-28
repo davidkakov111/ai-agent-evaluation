@@ -1,0 +1,37 @@
+Step 8 is done. Summary:
+Step 8: UI – Auth and Layout – Complete
+Completed actions
+Protected layout (src/app/(dashboard)/layout.tsx)
+Uses requireAuthenticatedSession() – redirects to /login when unauthenticated
+Header with TaskFlow logo, nav, and sign-out
+Server-side session check to avoid showing protected content before redirect
+Dashboard navigation (src/features/auth/components/dashboard-nav.tsx)
+Client component with useSession()
+Dashboard link only when user has an organization
+Organizations link
+User name/email
+Sign-out button
+Sign-out button (src/features/auth/components/sign-out-button.tsx)
+Client component using signOut({ callbackUrl: "/" })
+Reusable with optional className and children
+Route structure
+(dashboard) route group with shared layout
+(dashboard)/dashboard/page.tsx – requires membership, redirects to /organizations otherwise
+(dashboard)/organizations/page.tsx – for users without an org
+Home page
+Sign-out button added when user is logged in
+Existing pieces (from Step 4)
+Login page and form
+Register page and form
+Root layout with SessionProvider and TRPCProvider
+getAuthSession, redirectIfAuthenticated, requireAuthenticatedSession, requireMembershipSession, requireMembershipSessionStrict
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Flow
+Unauthenticated → /dashboard or /organizations → redirect to /login
+Authenticated, no org → /dashboard → redirect to /organizations
+Authenticated, with org → full access to dashboard and organizations
+Sign-out → redirect to /
+Next step: Step 9: UI – Organizations, Join Requests, Tasks.

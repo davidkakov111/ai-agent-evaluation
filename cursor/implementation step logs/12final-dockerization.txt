@@ -1,0 +1,37 @@
+Summary of the Docker setup:
+Files Created/Modified
+1. Dockerfile (multi-stage)
+Stage 1 (deps): Installs dependencies, including build tools for better-sqlite3
+Stage 2 (builder): Generates Prisma client and builds Next.js with output: "standalone"
+Stage 3 (runner): Minimal runtime image with:
+Non-root user (nextjs)
+Curl for health checks
+SQLite data directory at /app/data
+Full node_modules for Prisma migrations
+2. .dockerignore
+Excludes node_modules, .next, tests, .env, *.db, and other dev-only files
+Keeps .env.example for reference
+3. docker-compose.yaml
+Single app service
+Volume taskflow_data for SQLite persistence
+Health check on http://localhost:3000/
+Loads .env for NEXTAUTH_SECRET and NEXTAUTH_URL
+4. docker-entrypoint.sh
+Checks NEXTAUTH_SECRET is set
+Runs prisma migrate deploy before starting the app
+Starts the Next.js server
+5. next.config.ts
+Added output: "standalone" for smaller production builds
+6. .env.docker.example
+Template for required environment variables
+7. DOCKER.md
+Docker usage and environment variables
+Production notes and risks
+Usage
+cp .env.docker.example .env# Edit .env and set NEXTAUTH_SECRET (e.g. openssl rand -base64 32)docker compose up
+Production Notes
+Risk	Mitigation
+Image size (~500MB)	Full node_modules needed for Prisma CLI; could be reduced with a separate migration job
+SQLite	Suitable for single-instance; use PostgreSQL for horizontal scaling
+In-memory rate limiter	Per-container; use Redis for distributed limiting
+No TLS	Run behind a reverse proxy (nginx, Caddy) for HTTPS

@@ -1,0 +1,41 @@
+Step 5 is done. Summary:
+Step 5: tRPC Setup and Context – Complete
+Completed actions
+Auth policies (src/server/policies/auth-policy.ts)
+requireAuth: throws UnauthorizedDomainError if user is null
+requireMembership: throws ForbiddenDomainError if no organization
+requireRole: checks allowed roles
+requireOwnerOrAdminRole: OWNER or ADMIN
+ensureSameOrganizationScope: same-org check
+System service (for health check)
+SystemRepository: pingDatabase() with $queryRaw SELECT 1
+SystemService: healthcheck() returning { ok: true, database: "up" }
+tRPC context (src/server/trpc/context.ts)
+Per-request context with session (from getAuthSession), services (from createServices), headers
+tRPC setup (src/server/trpc/trpc.ts)
+superjson transformer for Date serialization
+Error formatter: maps Zod validation messages for BAD_REQUEST (-32600), adds domainCode to error data
+errorMappingMiddleware: catches and maps domain errors via mapErrorToTRPC
+authMiddleware: requires non-null session, adds user to context
+Procedures: publicProcedure, protectedProcedure, memberProcedure, ownerAdminProcedure
+Routers
+auth: register (public mutation), session (public query)
+health: status (public query)
+_app: combines auth and health routers
+API route (src/app/api/trpc/[trpc]/route.ts)
+fetchRequestHandler with createContext per request
+tRPC client (src/lib/trpc/)
+createTRPCReact with AppRouter
+getTrpcUrl() for base URL
+getBrowserTrpcClient() for imperative calls (proxy client with superjson)
+TRPCProvider: trpc.Provider + QueryClientProvider with httpBatchLink and superjson
+Layout
+App wrapped with TRPCProvider inside AuthSessionProvider
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Usage
+Hooks: trpc.auth.session.useQuery(), trpc.health.status.useQuery()
+Imperative: getBrowserTrpcClient().auth.register.mutate({ ... })
+Next step: Step 6: Organization and Join Request System.

@@ -1,0 +1,44 @@
+Step 6 is done. Summary:
+Step 6: Organization and Join Request System – Complete
+Completed actions
+Validation schemas (src/lib/validation/organization.ts)
+createOrganizationInputSchema: name (2–120 chars), slug (3–64 chars, lowercase, numbers, single dashes)
+requestJoinOrganizationInputSchema: organizationId
+approveJoinRequestInputSchema: joinRequestId, role (OWNER | ADMIN | EMPLOYEE)
+rejectJoinRequestInputSchema: joinRequestId
+Organization repository (src/server/repositories/organization-repository.ts)
+createOrganization, createMembership, findOrganizationById
+findMembershipByUserId, findPendingJoinRequestByUserInOrganization
+createJoinRequest, listPendingJoinRequestsByOrganizationWithOptions
+findJoinRequestByIdInOrganization, updateJoinRequestStatus
+listMembersByOrganization, listDiscoverableOrganizations
+Transaction support via optional tx parameter
+Organization service (src/server/services/organization-service.ts)
+createOrganization: auth required; no existing membership; create org + OWNER membership in transaction; handle P2002 (slug uniqueness)
+requestToJoinOrganization: auth required; no membership; org exists; no pending request; create join request
+approveJoinRequest / rejectJoinRequest: owner/admin only; update status; on APPROVED, create membership in same transaction; re-check membership before create
+listPendingJoinRequests: owner/admin only
+listOrganizationMembers: owner/admin only
+listDiscoverableOrganizations: public
+tRPC routers
+Organization (organization.listPublic, organization.create, organization.requestJoin, organization.members)
+Join request (joinRequest.listPending, joinRequest.approve, joinRequest.reject)
+Service wiring
+createServices now includes organization: OrganizationService
+Edge cases handled
+Race on approve: Transaction and updateMany with status: PENDING; re-check membership before creating membership
+Slug uniqueness: P2002 → ConflictDomainError for slug
+Duplicate membership: P2002 on userId → PreconditionFailedDomainError
+Verification
+npm run typecheck – passed
+npm run lint – passed
+npm run build – passed
+Usage
+trpc.organization.listPublic.useQuery() – list organizations (public)
+trpc.organization.create.useMutation() – create organization (protected)
+trpc.organization.requestJoin.useMutation() – request to join (protected)
+trpc.organization.members.useQuery() – list members (owner/admin)
+trpc.joinRequest.listPending.useQuery() – list pending requests (owner/admin)
+trpc.joinRequest.approve.useMutation() – approve join request (owner/admin)
+trpc.joinRequest.reject.useMutation() – reject join request (owner/admin)
+Next step: Step 7: Task Management.

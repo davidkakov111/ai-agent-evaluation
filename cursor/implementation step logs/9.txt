@@ -1,0 +1,21 @@
+Step 9 is done. Implemented changes:
+Organizations
+CreateOrganizationForm – Form with name, slug, and “Suggest” button; creates org and redirects to dashboard
+OrgList – Lists discoverable orgs with “Member” badge or “Request to join” button
+RequestJoinButton – Sends join request and shows loading/success states
+Join requests
+PendingJoinRequestsList – Lists pending join requests (owner/admin only)
+ApproveRejectButtons – Approve (with role: EMPLOYEE/ADMIN) or reject
+Tasks
+TaskList – Task list filtered by role (employees see only their tasks)
+TaskCard – Shows title, description, status, assignee, and actions
+CreateTaskForm – Create task with assignee dropdown (owner/admin only)
+UpdateStatusSelect – Status dropdown (TODO→IN_PROGRESS→DONE) for allowed transitions
+ReassignSelect – Reassign to another employee (owner/admin only)
+Pages
+/organizations – Create org form and discoverable org list with join requests
+/dashboard – Pending join requests (owner/admin), create task form (owner/admin), and task list
+Role-based visibility:
+Employees: Only their tasks; can update status on their own tasks
+Owners/Admins: All tasks; create, reassign, approve/reject join requests
+Build succeeds. Run npm run dev to try the flow.
