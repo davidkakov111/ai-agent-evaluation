@@ -1,7 +1,7 @@
 ⭐ AI Developer Productivity Scorecard:
 
-| Metric                   | Question To Evaluate                                                                       | Score (0-10) |
-| ------------------------ | ------------------------------------------------------------------------------------------ | ------------ |
+| Metric                   | Question To Evaluate                                                                       | Score (0-10) | Why?
+| ------------------------ | ------------------------------------------------------------------------------------------ | ------------ |--------------------------------------------------------------------
 | Idea Match               | Did the AI correctly implement the requested project idea and features?                    |              |
 | Architecture Quality     | Is the project structure clean, scalable, and logically separated (DB, API, UI, services)? |              |
 | Security + Authorization | Are roles, permissions, and data isolation correctly enforced in backend logic?            |              |
@@ -28,12 +28,16 @@ Ignore everything else if these are low:
     Autonomy
     Security
 
-
-
 ⭐ Most Important Real Productivity Question (Answer Separately)
     How much did I personally need to correct, rewrite, or guide the AI to reach the final desired result?
 
-⭐ Any other notes/observations?
+Planning Score: ? / 10
+    Description:
+
+Implementation Score: ? / 10
+    Description:
+
+Any other notes/observations?
 
 Time to implement evrything was: ? h ? min 
 
