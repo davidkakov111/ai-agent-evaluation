@@ -1,0 +1,36 @@
+Implemented only Step 1 (Bootstrap project foundation and quality gates) and stopped.
+What I completed
+Scaffolded a fresh Next.js App Router + TypeScript project in codex-cursor/code.
+Added required core dependencies:
+Runtime: @trpc/server, @trpc/client, @trpc/react-query, @tanstack/react-query, zod, @prisma/client, next-auth, bcryptjs, superjson
+Dev: prisma, vitest, @vitest/coverage-v8
+Tightened scripts in package.json:
+lint with --max-warnings=0
+lint:fix, typecheck, test, test:run, test:coverage
+Strengthened TypeScript config in tsconfig.json:
+allowJs: false
+noImplicitOverride, noUncheckedIndexedAccess, exactOptionalPropertyTypes, noFallthroughCasesInSwitch, noUnusedLocals, noUnusedParameters
+Updated ESLint rules in eslint.config.mjs to enforce:
+no explicit any
+no unused vars (with _ ignore pattern)
+Updated .gitignore for env/template safety and SQLite/test artifacts:
+keeps .env.example tracked
+ignores local sqlite db files and coverage output
+Added baseline env template: .env.example
+Added Vitest base config: vitest.config.ts
+Created clean architecture directory skeleton:
+src/server/api
+src/server/auth
+src/server/repositories
+src/server/services
+src/lib
+src/features
+(tracked via .gitkeep files)
+Validation run
+npm run lint ✅
+npm run typecheck ✅
+IDE lints check ✅ (no linter errors)
+To-do status
+bootstrap-foundation: completed
+All other plan to-dos remain pending (as requested)
+If you want, I’ll proceed next with Step 2 only (Prisma schema + SQLite modeling + migration + seed scaffold).

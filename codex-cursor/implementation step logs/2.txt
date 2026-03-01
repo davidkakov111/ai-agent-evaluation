@@ -1,0 +1,40 @@
+Implemented Step 2 only (Model domain in Prisma for multi-tenancy and lifecycle constraints) and stopped.
+What I changed
+Added Prisma schema at prisma/schema.prisma with:
+Models: User, Organization, Membership, JoinRequest, Task
+Enums: OrgRole, JoinRequestStatus, TaskStatus
+Tenant scoping via explicit FKs (organizationId on scoped entities)
+Audit fields (createdAt, updatedAt) and actor linkage (createdById, assignedToId, decidedById)
+Constraints/indexes for:
+one membership per user (Membership.userId @unique)
+role/status query efficiency
+join request lifecycle uniqueness (@@unique([organizationId, userId, status]))
+Added seed scaffolding at prisma/seed.ts:
+Creates demo users (owner/admin/employee)
+Creates demo organization
+Creates owner/admin memberships
+Creates one pending join request
+Creates one sample task
+Added Prisma scripts/config in package.json:
+prisma:generate, prisma:migrate, prisma:seed
+Prisma seed command configured to run tsx prisma/seed.ts
+Added local env file for Prisma migration execution:
+.env (local only; ignored)
+Installed tsx dev dependency for TS seed execution.
+Migration and DB generation
+Ran:
+npx prisma generate
+npx prisma migrate dev --name init
+npx prisma db seed
+Generated migration:
+prisma/migrations/20260301095207_init/migration.sql
+Important technical note
+Prisma 7.x currently requires new datasource config flow and failed with the standard schema URL pattern.
+To keep this implementation production-practical and stable for this stack, I moved Prisma to 6.x (prisma + @prisma/client), which works cleanly with current setup.
+Validation
+npm run lint ✅ (0 warnings)
+npm run typecheck ✅
+Lint diagnostics ✅
+To-do status
+define-prisma-domain: completed
+No other steps executed.

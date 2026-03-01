@@ -1,0 +1,66 @@
+Implemented Step 4 only (Build core domain services) and stopped.
+What I added
+Repositories (src/server/repositories)
+types.ts (DbClient type for Prisma client/transaction client)
+organizationRepository.ts
+membershipRepository.ts
+joinRequestRepository.ts
+taskRepository.ts
+These centralize Prisma operations with explicit select projections so service logic doesn’t depend on raw ORM entities everywhere.
+Service error model (src/server/services)
+errors.ts with typed domain errors:
+DomainError
+ValidationError
+ConflictError
+ForbiddenError
+NotFoundError
+InvalidTransitionError
+validation.ts with a parseInput() helper that wraps Zod parse failures as ValidationError.
+Domain services (src/server/services)
+organizationService.ts
+createOrganization():
+Zod-validated input
+Enforces one-org-per-user invariant
+Enforces unique org slug
+Creates org + owner membership in one transaction
+membershipService.ts
+getMembershipByUser()
+createMembership() with one-org-per-user invariant
+leaveOrganization() explicitly forbidden once joined
+joinRequestService.ts
+createJoinRequest():
+Validates input with Zod
+Requires org existence
+Blocks users already in an org
+Blocks duplicate pending requests
+Prevents requesting OWNER directly
+decideJoinRequest():
+Requires PENDING precondition
+Restricts decision to OWNER/ADMIN of same org
+Approval creates membership atomically in transaction
+Reject/approve updates decision metadata
+taskService.ts
+createTask():
+Only OWNER/ADMIN can create
+Assignee must be EMPLOYEE in same org
+listVisibleTasks():
+OWNER/ADMIN see all org tasks
+EMPLOYEE sees own assigned tasks only
+updateTaskStatus():
+Scoped to task’s org
+EMPLOYEE can update only own assigned tasks
+OWNER/ADMIN can update org task statuses
+Constraints covered in this step
+Zod validation at service boundaries
+Business invariants encoded in service layer
+Centralized repository access
+Typed domain errors for future API mapping
+Tenant scope checks in task and join-request workflows
+Transaction used for approval flow (membership creation + request decision)
+Validation
+npm run lint ✅ (0 warnings)
+npm run typecheck ✅
+ReadLints ✅ no linter issues on changed files
+To-do status
+build-domain-services: completed
+No later steps were implemented.

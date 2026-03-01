@@ -1,0 +1,119 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum OrgRole {
+  OWNER
+  ADMIN
+  EMPLOYEE
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+model User {
+  id                   String         @id @default(cuid())
+  email                String         @unique
+  name                 String
+  passwordHash         String
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  memberships          Membership[]
+  joinRequests         JoinRequest[]  @relation("JoinRequestRequester")
+  approvedJoinRequests JoinRequest[]  @relation("JoinRequestDecider")
+  createdTasks         Task[]         @relation("TaskCreator")
+  assignedTasks        Task[]         @relation("TaskAssignee")
+  assignedTasksByMe    Task[]         @relation("TaskAssigner")
+  statusUpdatedTasks   Task[]         @relation("TaskStatusUpdater")
+  organizationsCreated Organization[] @relation("OrganizationCreator")
+}
+
+model Organization {
+  id           String        @id @default(cuid())
+  name         String
+  slug         String        @unique
+  createdById  String
+  createdBy    User          @relation("OrganizationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  memberships  Membership[]
+  joinRequests JoinRequest[]
+  tasks        Task[]
+
+  @@index([createdById])
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  organizationId String
+  role           OrgRole
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  user           User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, role])
+}
+
+model JoinRequest {
+  id             String            @id @default(cuid())
+  userId         String
+  organizationId String
+  requestedRole  OrgRole           @default(EMPLOYEE)
+  status         JoinRequestStatus @default(PENDING)
+  decidedById    String?
+  decidedAt      DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  user           User              @relation("JoinRequestRequester", fields: [userId], references: [id], onDelete: Restrict)
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  decidedBy      User?             @relation("JoinRequestDecider", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, userId])
+  @@index([organizationId, status])
+  @@index([userId, status])
+}
+
+model Task {
+  id                String       @id @default(cuid())
+  organizationId    String
+  createdById       String
+  assignedToId      String
+  assignedById      String?
+  assignedAt        DateTime?
+  statusUpdatedById String?
+  statusUpdatedAt   DateTime?
+  title             String
+  description       String
+  status            TaskStatus   @default(TODO)
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  createdBy         User         @relation("TaskCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  assignedTo        User         @relation("TaskAssignee", fields: [assignedToId], references: [id], onDelete: Restrict)
+  assignedBy        User?        @relation("TaskAssigner", fields: [assignedById], references: [id], onDelete: SetNull)
+  statusUpdatedBy   User?        @relation("TaskStatusUpdater", fields: [statusUpdatedById], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, status])
+  @@index([assignedToId, status])
+  @@index([createdById])
+  @@index([assignedById])
+  @@index([statusUpdatedById])
+}

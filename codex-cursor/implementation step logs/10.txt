@@ -1,0 +1,39 @@
+Implemented Step 10 and completed the plan.
+What I added for production hardening
+Structured logging
+Added src/lib/logger.ts (JSON logs with ts, level, event, metadata)
+Added logs around:
+auth credential outcomes in src/server/auth/config.ts
+registration flow in src/app/api/auth/register/route.ts
+join approvals/rejections + task mutations in routers/services
+tRPC route errors in src/app/api/trpc/[trpc]/route.ts
+Request correlation IDs
+Added src/middleware.ts to generate/propagate x-request-id
+Added request ID extraction helper in src/lib/request.ts
+Added requestId into tRPC context in src/server/api/trpc.ts
+Included requestId in API mutation logs where feasible
+Security / DX hardening
+Added strict env validation via Zod in src/lib/env.ts
+Updated Auth.js session tuning (maxAge, updateAge) and secret from validated env
+Added request body size limits for:
+POST /api/auth/register
+/api/trpc handler
+Added safe global App Router error boundary:
+src/app/error.tsx
+Docs & release readiness
+Replaced generic README with production runbook content:
+setup, migrations, seed strategy, commands
+security notes, release checklist
+SQLite backup strategy
+Added architecture document:
+docs/architecture.md
+Existing docs/authorization.md remains in place
+Updated env template:
+.env.example now includes MAX_BODY_SIZE_BYTES
+Full plan status
+All plan to-dos are now completed (steps 1 through 10).
+Validation
+npm run lint ✅
+npm run typecheck ✅
+npm run test:run ✅ (all tests passing)
+If you want, I can do one final pass to tighten a few production niceties (e.g. redact email from auth warning logs, add log sampling, or add a simple health endpoint).

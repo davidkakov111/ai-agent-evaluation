@@ -1,0 +1,68 @@
+Implemented Step 7 only (Build App Router UI flows and role-aware UX) and stopped.
+What I added
+App Router route groups + protected redirects
+Root redirect flow
+src/app/page.tsx
+Redirects based on auth/org state:
+unauthenticated → /login
+authenticated + org → /dashboard
+authenticated + no org → /onboarding
+Auth route group
+src/app/(auth)/layout.tsx
+Redirects signed-in users away from auth pages
+src/app/(auth)/login/page.tsx
+src/app/(auth)/register/page.tsx
+App route group
+src/app/(app)/layout.tsx
+Requires authentication
+Renders app nav + sign out
+src/app/(app)/onboarding/page.tsx
+For authenticated users without org
+src/app/(app)/(org)/layout.tsx
+Requires organization membership (else redirects to /onboarding)
+src/app/(app)/(org)/dashboard/page.tsx
+src/app/(app)/(org)/tasks/page.tsx
+src/app/(app)/(org)/join-requests/page.tsx
+Typed tRPC client hooks integration
+Added typed React tRPC provider:
+src/lib/trpc/react.tsx
+Wired provider into root layout:
+src/app/layout.tsx
+This enables feature-level typed hooks across the UI.
+Feature UI modules
+Auth
+src/features/auth/LoginForm.tsx
+src/features/auth/RegisterForm.tsx
+src/features/auth/SignOutButton.tsx
+Organization onboarding
+src/features/organization/OnboardingPanel.tsx
+Create org form (organization.create)
+Join request form (joinRequest.create)
+success/error defensive banners
+Join request management
+src/features/join-requests/JoinRequestsPanel.tsx
+Role-aware actions:
+OWNER/ADMIN can approve/reject pending requests
+EMPLOYEE/non-manager gets view-only list
+Query invalidation on mutation success
+Task workspace
+src/features/tasks/TaskWorkspace.tsx
+Role-aware UX:
+OWNER/ADMIN can create/reassign
+all org users can see allowed task list (backend scoped)
+Task status update actions with loading/error handling
+Empty/loading/error states included
+UI/UX defensive patterns added
+Loading states for list queries
+Empty states for no tasks / no join requests
+Error banners for mutation/query failures
+Mutation invalidation (trpc.useUtils()) to reduce stale cache issues
+Styling foundation
+Expanded src/app/globals.css with reusable utility classes for layout, panels, forms, banners, and buttons for consistent UX without adding extra UI libs.
+Validation
+npm run lint ✅ (--max-warnings=0)
+npm run typecheck ✅
+ReadLints ✅ no diagnostics on changed files
+To-do status
+build-ui-flows: completed
+No later steps were implemented.

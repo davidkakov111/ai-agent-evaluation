@@ -1,0 +1,64 @@
+Implemented Step 6 only (tRPC routers and procedures with strict contracts) and stopped.
+What I added
+tRPC router composition
+src/server/api/root.ts
+Composes:
+auth
+organization
+joinRequest
+task
+Exports AppRouter type
+tRPC endpoint route
+src/app/api/trpc/[trpc]/route.ts
+Wires fetchRequestHandler for App Router
+Uses createTRPCContext
+Includes safe development error logging
+Routers implemented
+src/server/api/routers/auth.ts
+auth.me (protected)
+auth.register (public)
+Strict Zod input/output schemas
+Minimal output fields only
+src/server/api/routers/organization.ts
+organization.create (protected)
+Calls organizationService.createOrganization (creator becomes OWNER)
+Strict input/output schemas
+src/server/api/routers/joinRequest.ts
+joinRequest.create (protected)
+joinRequest.list (protected; role-aware via service)
+joinRequest.approve (OWNER/ADMIN)
+joinRequest.reject (OWNER/ADMIN)
+Strict Zod contracts and minimal outputs
+src/server/api/routers/task.ts
+task.create (OWNER/ADMIN)
+task.assign (OWNER/ADMIN)
+task.list (org-member; role-aware in service: manager sees all, employee sees assigned)
+task.updateStatus (org-member + service-level policy checks)
+Strict Zod contracts and minimal outputs
+Centralized error translation
+Added src/server/api/errorMapper.ts:
+mapToTRPCError(error) maps:
+domain errors (FORBIDDEN, CONFLICT, NOT_FOUND, VALIDATION_ERROR, INVALID_TRANSITION)
+ZodError
+Prisma known errors (e.g. unique conflict)
+unknown internal failures
+withTrpcErrorHandling() wrapper used in router handlers for consistent safe errors
+Supporting service/repository additions needed by router contracts
+To support required endpoints and scoping:
+joinRequestRepository:
+listByOrganization
+listByUser
+joinRequestService:
+listJoinRequests (manager gets org list, employee gets own list)
+taskRepository:
+updateAssignee
+taskService:
+assignTask
+These keep API surface aligned with Step 6 requirements (create/assign/list/update and create/list/approve/reject).
+Validation
+npm run lint ✅ (--max-warnings=0)
+npm run typecheck ✅
+ReadLints ✅ no diagnostics on changed files
+To-do status
+create-trpc-routers: completed
+No later steps were implemented.

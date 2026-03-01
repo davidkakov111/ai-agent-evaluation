@@ -1,0 +1,45 @@
+Implemented Step 5 only (Authorization and policy guards) and stopped.
+What I changed
+1) Reusable policy guards
+Added src/server/auth/policies.ts with:
+requireAuth(session)
+requireOrgMember(db, { userId, organizationId })
+requireRole(currentRole, allowedRoles)
+requireManagerRole(currentRole) (OWNER/ADMIN convenience)
+requireTaskAssigneeOrManager({ actorUserId, actorRole, assignedToId })
+requireScopedTask(db, { taskId, organizationId })
+requireScopedJoinRequest(db, { joinRequestId, organizationId })
+These enforce RBAC + tenant scoping and throw typed domain errors.
+2) API-entry fail-fast policy wiring
+Updated src/server/api/trpc.ts:
+protectedProcedure now uses requireAuth semantics
+Added orgMemberProcedure to require organization membership at API entry
+Added roleProcedure(allowedRoles) to enforce role guard centrally for router handlers
+This sets up the “cheap fail-fast” API layer required by the step.
+3) Standardized organization-scoped lookups
+To avoid global-ID-only access patterns:
+Updated src/server/repositories/taskRepository.ts with:
+findByIdInOrganization(id, organizationId)
+Updated src/server/repositories/joinRequestRepository.ts with:
+findByIdInOrganization(id, organizationId)
+Then applied these in services:
+src/server/services/taskService.ts
+updateTaskStatus now resolves task via org-scoped lookup
+uses requireOrgMember + requireTaskAssigneeOrManager
+src/server/services/joinRequestService.ts
+decideJoinRequest now resolves join request via org-scoped lookup
+role checks via requireManagerRole
+This gives defense-in-depth and reduces IDOR risk.
+4) Authorization documentation
+Added docs/authorization.md with:
+role decision matrix (OWNER / ADMIN / EMPLOYEE)
+prohibited operations
+guard reference list
+tenant-scope rules (“id + organizationId” lookup rule)
+Validation
+npm run lint ✅ (--max-warnings=0)
+npm run typecheck ✅
+ReadLints ✅ no diagnostics on changed files
+To-do status
+add-rbac-policies: completed
+No later steps were implemented.

@@ -1,0 +1,50 @@
+Implemented Step 3 only (Establish authentication and session plumbing with proven library) and stopped.
+What was added
+Auth.js credentials configuration
+src/server/auth/config.ts
+Credentials login via email/password
+Zod validation for credentials input
+Password verification with bcryptjs
+User-enumeration hardening with dummy hash comparison when email is missing
+JWT/session callbacks include:
+userId
+organizationId (from membership)
+role (from membership)
+Optional secret only when NEXTAUTH_SECRET exists (strict TS compatible)
+NextAuth route handler
+src/app/api/auth/[...nextauth]/route.ts
+Exposes GET/POST handlers for Auth.js in App Router
+Registration endpoint
+src/app/api/auth/register/route.ts
+Zod-validated payload (email, name, password)
+Password hashing before persistence
+Normalized lowercased email
+Proper error handling:
+400 invalid payload/body
+409 duplicate email
+500 unexpected failure
+Auth utility modules
+src/server/auth/schemas.ts (typed Zod schemas)
+src/server/auth/password.ts (hash/verify helpers)
+Session helper
+src/server/auth/session.ts
+getAuthSession() based on shared authOptions
+Prisma client singleton
+src/server/db.ts
+Avoids duplicate clients during hot reload
+tRPC context integration
+src/server/api/trpc.ts
+createTRPCContext injects session + prisma
+protectedProcedure middleware for authenticated access
+Type augmentation for NextAuth
+src/types/next-auth.d.ts
+Strongly-typed session/JWT user fields (id, organizationId, role)
+TS include adjustment
+Updated tsconfig.json to include **/*.d.ts
+Validation
+npm run typecheck ✅
+npm run lint ✅ (--max-warnings=0)
+ReadLints on changed files ✅
+To-do status
+implement-auth: completed
+No later plan steps were implemented.

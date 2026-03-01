@@ -1,0 +1,38 @@
+Findings (Ordered by Severity)
+Critical — Join request workflow can break after repeated attempts in prisma/schema.prisma and src/server/services/joinRequestService.ts
+Why: JoinRequest had @@unique([organizationId, userId, status]). After one rejection, a second rejected outcome for same user/org would violate uniqueness during transition updates. This can produce runtime DB errors and block valid re-requests.
+High — Pending uniqueness relied on DB shape that did not support safe re-request lifecycle in src/server/repositories/joinRequestRepository.ts and prisma/seed.ts
+Why: repository/seed assumed a status-based composite unique key. That made lifecycle brittle and coupled domain behavior to a problematic schema constraint.
+Medium — Avoidable PII in logs in src/server/auth/config.ts and src/app/api/auth/register/route.ts
+Why: logging raw normalized email for auth failures/conflicts increases sensitive data exposure in logs without operational necessity.
+Medium (Architecture/Redundancy) — Dual registration paths exist (/api/auth/register and trpc.auth.register)
+Why: same business capability implemented in two transport layers can drift over time. Not a direct bug now, but increases maintenance risk.
+Corrections Applied (Production-quality, affected files only)
+I implemented fixes for the first 3 issues:
+prisma/schema.prisma
+Changed join request uniqueness to @@unique([organizationId, userId]).
+prisma/migrations/20260301123000_fix_join_request_uniqueness/migration.sql
+Drops old status-based unique index, creates new org/user unique index.
+src/server/repositories/joinRequestRepository.ts
+Replaced status-unique lookup with org/user unique lookup.
+Added reopenAsPending(...) to safely reopen previously decided requests.
+src/server/services/joinRequestService.ts
+createJoinRequest(...) now:
+blocks if existing request is PENDING
+reopens decided request to PENDING (instead of creating conflicting records)
+keeps conflict behavior for existing membership.
+prisma/seed.ts
+Updated join request upsert to use organizationId_userId.
+src/server/auth/config.ts
+Removed user email from user_not_found auth log.
+src/app/api/auth/register/route.ts
+Removed email from conflict logs.
+Validation Results
+npm run lint ✅
+npm run typecheck ✅
+npm run test:run ✅ (all tests passing)
+Architecture/Design Adherence Review
+Clean separation is still intact: routers -> services -> repositories -> Prisma.
+Zod validation remains consistently applied at boundaries.
+Multi-tenant scoping and RBAC checks are still enforced in both policy and service layers.
+Main remaining architecture risk is the dual registration implementation; recommended next refactor is to keep a single canonical registration service and have both transports call that one implementation.

@@ -1,0 +1,52 @@
+Implemented Step 8 only (Enforce workflow correctness for join requests and task state transitions) and stopped.
+What I changed
+1) Explicit task status transition policy
+Updated src/server/services/taskService.ts with a strict transition matrix:
+TODO -> IN_PROGRESS
+IN_PROGRESS -> TODO | DONE
+DONE -> IN_PROGRESS
+Any other transition throws InvalidTransitionError
+This enforces deterministic workflow behavior and prevents invalid jumps.
+2) Join-request race-condition hardening
+Updated src/server/repositories/joinRequestRepository.ts and src/server/services/joinRequestService.ts:
+Added markDecidedIfPending(...) repository method using conditional updateMany (status = PENDING)
+decideJoinRequest now uses this conditional update inside transaction
+If another actor already decided, operation fails with InvalidTransitionError
+This prevents double-approval/double-rejection races in concurrent requests.
+3) Audit metadata for assignment/status changes
+Extended Prisma schema and task mutation behavior to track audit actors/timestamps.
+Schema updates in prisma/schema.prisma:
+Task.assignedById, Task.assignedAt
+Task.statusUpdatedById, Task.statusUpdatedAt
+New user relations:
+User.assignedTasksByMe
+User.statusUpdatedTasks
+Added indexes for new audit actor fields
+Repository updates in src/server/repositories/taskRepository.ts:
+task select includes audit fields
+create now records assignedById + assignedAt
+updateAssignee now records assignedById + assignedAt
+updateStatus now records statusUpdatedById + statusUpdatedAt
+Service updates in src/server/services/taskService.ts:
+createTask passes assignedById (actor)
+assignTask passes assignedById (actor)
+updateTaskStatus passes statusUpdatedById (actor)
+existing org-scope/assignee-or-manager constraints remain enforced
+4) Database migration
+Created and applied migration:
+prisma/migrations/20260301101525_workflow_audit_and_transitions/migration.sql
+Prisma client regenerated successfully.
+Constraints from Step 8 now covered
+Explicit join-request transition guard (PENDING -> APPROVED|REJECTED) ✅
+Transactional critical mutation for approval flow ✅
+Prevent invalid ops (employee assign, cross-org status updates, non-assignee update) ✅
+Task status transition enforcement ✅
+Audit metadata for assignment/status updater ✅
+Race-aware join decision consistency ✅
+Validation
+npm run lint ✅ (--max-warnings=0)
+npm run typecheck ✅
+ReadLints ✅ no diagnostics on modified files
+To-do status
+enforce-workflows: completed
+No later steps were implemented.

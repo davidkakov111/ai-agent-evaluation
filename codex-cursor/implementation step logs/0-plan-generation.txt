@@ -1,0 +1,371 @@
+TaskFlow Production Implementation Plan
+
+1) Bootstrap project foundation and quality gates
+
+
+
+
+
+Layers: Platform, Tooling, CI, App shell
+
+
+
+Initialize a new Next.js App Router project with strict TypeScript and src/ layout; add core dependencies: @trpc/server, @trpc/client, @trpc/react-query, @tanstack/react-query, zod, prisma, @prisma/client, next-auth (Auth.js), bcryptjs (or argon2), and test stack (vitest, @vitest/coverage-v8).
+
+
+
+Configure strict compiler and linting rules to prevent any and warning leakage; ensure no unused vars/imports and consistent module boundaries.
+
+
+
+Define base folder architecture for clean separation: src/server/{api,services,repositories,auth}, src/lib, src/features, src/app.
+
+
+
+Add baseline environment handling (.env, .env.example) and update ignore rules in .gitignore to include Prisma SQLite file(s), generated artifacts, local env files, and test coverage outputs.
+
+
+
+Risks / edge cases: accidental commit of DB/env secrets, drift between generated Prisma client and schema, permissive TS/Lint config allowing weak typing.
+
+2) Model domain in Prisma for multi-tenancy and lifecycle constraints
+
+
+
+
+
+Layers: DB schema, persistence constraints
+
+
+
+Design and implement Prisma models in prisma/schema.prisma: User, Organization, Membership, JoinRequest, Task, plus enums OrgRole, JoinRequestStatus, TaskStatus.
+
+
+
+Enforce “one user belongs to only one organization” with unique constraints (e.g., one active membership per user) and relation indexes for common queries (org/task/member lookups).
+
+
+
+Include audit timestamps (createdAt, updatedAt) and actor linkage (createdById, assignedToId) where appropriate.
+
+
+
+Define status evolution fields for join requests and tasks, and explicit foreign keys to preserve org scope integrity.
+
+
+
+Create initial migration and seed scaffolding in prisma/seed.ts for local bootstrap/testing accounts.
+
+
+
+Risks / edge cases: SQLite constraint behavior differences vs server DBs, race conditions creating duplicate memberships/requests, referential integrity around deleted users/org records.
+
+3) Establish authentication and session plumbing with proven library
+
+
+
+
+
+Layers: Auth, API context, security
+
+
+
+Implement Auth.js (NextAuth) credentials flow (email/password) in src/app/api/auth/[...nextauth]/route.ts using secure password hashing and constant-time comparison.
+
+
+
+Build registration flow using Zod input schema, uniqueness checks, and hashed password persistence; keep auth-only user creation separate from org onboarding.
+
+
+
+Extend session/JWT callbacks to include userId, organizationId (if any), and effective role for authorization checks.
+
+
+
+Create typed auth utilities in src/server/auth/session.ts and inject authenticated user data into tRPC context in src/server/api/trpc.ts.
+
+
+
+Risks / edge cases: user enumeration via auth errors, weak password policy, stale session role after approval changes, account creation race on same email.
+
+4) Build core domain services (business logic isolated from transport)
+
+
+
+
+
+Layers: Domain services, repositories, validation
+
+
+
+Create service modules in src/server/services for organizationService, membershipService, joinRequestService, taskService; each accepts typed inputs validated by Zod and returns typed results/errors.
+
+
+
+Use repository helpers in src/server/repositories for Prisma interactions so domain rules are centralized and testable independently of tRPC handlers.
+
+
+
+Encode hard business invariants in services:
+
+
+
+
+
+user may join only one org ever (per requirement),
+
+
+
+cannot leave org once joined,
+
+
+
+join requests require PENDING precondition before approve/reject,
+
+
+
+task operations must remain within actor’s organization scope.
+
+
+
+Define typed domain errors (e.g., ForbiddenError, ConflictError, InvalidTransitionError) and map consistently later to API errors.
+
+
+
+Risks / edge cases: leaking Prisma models directly into UI contracts, duplicated rule checks in multiple layers, missing transaction boundaries around approval flow.
+
+5) Implement authorization and policy guards (RBAC + tenant scoping)
+
+
+
+
+
+Layers: Authorization, API middleware, domain policy
+
+
+
+Create reusable role/tenant guards in src/server/auth/policies.ts: requireAuth, requireOrgMember, requireRole([OWNER, ADMIN]), requireTaskAssigneeOrManager.
+
+
+
+Apply policy checks both at API entry (cheap fail-fast) and service-level critical paths (defense-in-depth).
+
+
+
+Standardize org scoping helpers so every task/join-request query is filtered by organization, never by raw global IDs.
+
+
+
+Document decision matrix for permissions (OWNER/ADMIN/EMPLOYEE) and prohibited actions in docs/authorization.md.
+
+
+
+Risks / edge cases: IDOR vulnerabilities if route accepts cross-org IDs, role escalation bugs, inconsistent policy application between read/write endpoints.
+
+6) Implement tRPC routers and procedures with strict contracts
+
+
+
+
+
+Layers: API, input/output schemas, error mapping
+
+
+
+Build routers in src/server/api/routers: auth, organization, joinRequest, task, composed in src/server/api/root.ts.
+
+
+
+Validate all procedure inputs using Zod (no implicit trust), and expose minimal typed outputs (avoid leaking internal fields).
+
+
+
+Implement endpoints for:
+
+
+
+
+
+org creation (creator becomes OWNER),
+
+
+
+join request create/list/approve/reject,
+
+
+
+task create/assign/list/update status,
+
+
+
+role-aware list views (admin sees all, employee sees assigned).
+
+
+
+Add centralized error translation to tRPC errors (BAD_REQUEST, FORBIDDEN, CONFLICT, etc.) with safe, non-sensitive messages.
+
+
+
+Risks / edge cases: inconsistent error semantics across procedures, returning over-broad payloads, missing pagination/filtering as data grows.
+
+7) Build App Router UI flows and role-aware UX
+
+
+
+
+
+Layers: UI, routing, client data fetching
+
+
+
+Implement app routes and layouts for auth, onboarding, org dashboard, join-request management, and task workspace in src/app.
+
+
+
+Add route groups such as (auth) and (app) with protected layout checks and redirect rules for unauthenticated or unassigned users.
+
+
+
+Build UI modules in src/features/auth, src/features/organization, src/features/tasks, and src/features/join-requests using typed tRPC hooks.
+
+
+
+Implement role-aware rendering: owners/admins see management actions; employees see assigned tasks and status update controls only.
+
+
+
+Include optimistic/defensive UX patterns (loading, empty, access denied, conflict banners) and server-safe forms.
+
+
+
+Risks / edge cases: stale role state in client cache after approval, accidental visibility of unauthorized actions, brittle redirects causing navigation loops.
+
+8) Enforce workflow correctness for join requests and task state transitions
+
+
+
+
+
+Layers: Domain rules, DB consistency, business workflows
+
+
+
+Add explicit transition logic in services for join requests (PENDING -> APPROVED|REJECTED) and task statuses (TODO -> IN_PROGRESS -> DONE + permitted backflows if desired by policy).
+
+
+
+Perform critical mutations in Prisma transactions (especially approval creating membership and updating request atomically).
+
+
+
+Prevent invalid operations:
+
+
+
+
+
+employee assigning tasks,
+
+
+
+status updates on tasks outside actor org,
+
+
+
+non-assignee employee updating others’ tasks,
+
+
+
+approving requests for already-member users.
+
+
+
+Track assigner/updater metadata for auditability and future extensibility.
+
+
+
+Risks / edge cases: double-approval race, inconsistent task status updates under concurrent edits, orphaned requests when org ownership changes.
+
+9) Add comprehensive tests focused on business logic and critical API paths
+
+
+
+
+
+Layers: Unit tests, integration tests, regression safety
+
+
+
+Write unit tests for pure/domain services in src/server/services/tests with emphasis on task transitions and authorization-sensitive logic.
+
+
+
+Add targeted integration tests for tRPC procedures (using test context + isolated SQLite test DB) for join approval workflow and role-based task access.
+
+
+
+Cover failure modes: invalid transitions, unauthorized access, cross-org attempts, duplicate request/membership conflicts.
+
+
+
+Ensure tests assert typed error contracts and not just happy paths.
+
+
+
+Risks / edge cases: flaky DB state across tests, over-mocking hides integration bugs, missing regression coverage for role checks.
+
+10) Production hardening, observability basics, and release readiness
+
+
+
+
+
+Layers: Ops readiness, reliability, docs
+
+
+
+Add consistent structured logging around auth, join approvals, and task mutations (without sensitive data); include request correlation IDs if feasible.
+
+
+
+Implement baseline security and DX hardening: CSRF/session settings (Auth.js defaults tuned), input size limits, safe error boundaries, and strict env validation.
+
+
+
+Add concise docs: architecture, setup, migration workflow, role matrix, and local runbook in README.md and docs/architecture.md.
+
+
+
+Define release checklist: migration apply, seed strategy, lint/typecheck/test gates, and backup strategy for SQLite file.
+
+
+
+Risks / edge cases: SQLite file locking under heavy concurrent writes, silent schema drift in team workflows, insufficient operational visibility when failures occur.
+
+Proposed architecture flow
+
+flowchart TD
+ClientUI[NextAppRouterUI] --> TRPCClient[tRPCReactClient]
+TRPCClient --> TRPCRouter[tRPCRouters]
+TRPCRouter --> PolicyGuards[AuthAndRBACPolicies]
+TRPCRouter --> DomainServices[DomainServices]
+DomainServices --> Repositories[PrismaRepositories]
+Repositories --> SQLiteDB[SQLiteViaPrisma]
+Authjs[AuthJsCredentials] --> SessionCtx[SessionInTRPCContext]
+SessionCtx --> PolicyGuards
+
+Implementation sequencing notes
+
+
+
+
+
+Steps must be executed in order because service and policy layers depend on finalized schema/auth context.
+
+
+
+Keep business rules in services from the beginning to avoid costly refactors when tests are added.
+
+
+
+Treat all multi-tenant boundaries as security boundaries; org scoping is mandatory in every query/mutation path.

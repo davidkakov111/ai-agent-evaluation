@@ -1,0 +1,58 @@
+Dockerization is now implemented end-to-end with automatic migrations and verified startup.
+What I added
+Dockerfile (multi-stage, production-oriented)
+deps stage for dependency install
+builder stage for Prisma client generation + Next production build
+migrator target to run prisma migrate deploy
+minimal runner target (standalone Next output, non-root user, NODE_ENV=production)
+.dockerignore
+docker-compose.yaml
+migrate one-shot service
+app service depends on successful migration completion
+shared named volume for SQLite file persistence
+.env.docker.example
+next.config.ts
+enabled output: "standalone" for smaller runtime image
+package.json
+added prisma:deploy script
+README.md
+added Docker setup/run instructions, migration behavior, env guidance
+.gitignore
+tracks .env.docker.example
+Required production fixes I made during verification
+While validating real container startup, I found and fixed production blockers:
+Prisma client generation timing in Docker build
+Added explicit npm run prisma:generate in build stage before next build.
+Build-time env validation crash
+Build failed because env validation executes during route compilation.
+Added safe build-stage env values in Dockerfile (DATABASE_URL, NEXTAUTH_URL, NEXTAUTH_SECRET, MAX_BODY_SIZE_BYTES).
+Prisma engine runtime mismatch in container
+Added explicit Prisma binaryTargets in prisma/schema.prisma:
+native
+debian-openssl-1.1.x
+debian-openssl-3.0.x
+Regenerated client and rebuilt images.
+Next.js middleware deprecation
+Replaced src/middleware.ts with src/proxy.ts to follow Next 16 convention.
+How to run (from zero)
+Create Docker env file:
+cp .env.docker.example .env.docker
+Start:
+docker compose up --build
+(Or detached: docker compose up --build -d)
+Migration handling in container startup
+migrate service runs npm run prisma:deploy automatically.
+app waits for migrate to complete successfully (depends_on with service_completed_successfully).
+SQLite DB persists in named volume taskflow_data mounted at /app/data.
+Verification performed
+I verified with actual Docker commands:
+docker compose config ✅
+docker compose up --build -d ✅
+docker compose ps showed app running ✅
+docker compose logs showed migration execution/no pending migrations ✅
+HTTP check returned 200 from http://localhost:3000/login ✅
+Notes on remaining risk
+Prisma logs a non-fatal OpenSSL detection warning at startup in this environment, but runtime is functional due explicit dual binary targets.
+For stronger long-term ops, consider:
+moving from SQLite to a server DB for high concurrency
+upgrading Prisma config from package.json#prisma to prisma.config.ts (deprecation warning cleanup)

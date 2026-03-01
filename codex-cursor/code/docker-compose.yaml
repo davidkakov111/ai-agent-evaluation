@@ -1,0 +1,30 @@
+services:
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: migrator
+    env_file:
+      - .env.docker
+    volumes:
+      - taskflow_data:/app/data
+    restart: "no"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runner
+    env_file:
+      - .env.docker
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "3000:3000"
+    volumes:
+      - taskflow_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  taskflow_data:

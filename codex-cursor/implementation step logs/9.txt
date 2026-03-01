@@ -1,0 +1,49 @@
+Implemented Step 9 only (Add comprehensive tests focused on business logic and critical API paths) and stopped.
+What I added
+1) Unit tests for domain/service logic
+Created:
+src/server/services/__tests__/taskService.test.ts
+Coverage focus:
+valid task status transition (TODO -> IN_PROGRESS) for assignee
+invalid transition rejection (TODO -> DONE) with InvalidTransitionError
+authorization rejection for non-assignee employee with ForbiddenError
+These tests run with a typed in-memory mock DB object passed into service methods (no API layer involved), so business logic is isolated and fast.
+2) Integration tests for tRPC with isolated SQLite DB
+Created:
+src/server/api/__tests__/trpc.integration.test.ts
+Approach:
+creates an isolated SQLite DB file per suite
+applies schema with prisma migrate deploy (non-destructive flow)
+seeds realistic users/orgs/memberships/tasks
+uses appRouter.createCaller(...) with explicit sessions to exercise full tRPC procedure chain (middleware + service + repository + Prisma)
+Coverage focus:
+role-aware task visibility:
+admin sees all org tasks
+employee sees only assigned tasks
+unauthorized / cross-org attempts:
+unauthenticated access fails with UNAUTHORIZED
+cross-org task status update fails (NOT_FOUND due org-scoped lookup)
+join workflow and failure modes:
+create join request
+duplicate pending request conflict (CONFLICT)
+approve request creates membership
+second approval attempt fails (PRECONDITION_FAILED)
+Also includes typed tRPC error assertions (not just happy path assertions).
+3) Test infrastructure fix
+Updated:
+vitest.config.ts
+Added @ path alias resolution for Vitest so tests can import app code consistently with project path aliases.
+Important bug fix discovered while implementing tests
+To ensure integration tests use the isolated test DB, I fixed routers to pass ctx.prisma into services (instead of falling back to singleton prisma):
+src/server/api/routers/organization.ts
+src/server/api/routers/joinRequest.ts
+src/server/api/routers/task.ts
+This is also a production correctness improvement for context-scoped execution.
+Validation
+npm run test:run ✅ (6 passed)
+npm run lint ✅ (--max-warnings=0)
+npm run typecheck ✅
+ReadLints ✅ no diagnostics on changed files
+To-do status
+add-tests: completed
+Remaining pending step: harden-release (Step 10).
