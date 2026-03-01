@@ -26,7 +26,7 @@ export function OnboardingPanel() {
 
   const [orgName, setOrgName] = useState("");
   const [orgSlug, setOrgSlug] = useState("");
-  const [organizationIdToJoin, setOrganizationIdToJoin] = useState("");
+  const [organizationSlugToJoin, setOrganizationSlugToJoin] = useState("");
 
   const [orgError, setOrgError] = useState<string | null>(null);
   const [joinError, setJoinError] = useState<string | null>(null);
@@ -50,13 +50,13 @@ export function OnboardingPanel() {
 
     try {
       await createJoinRequest.mutateAsync({
-        organizationId: organizationIdToJoin,
+        organizationSlug: organizationSlugToJoin,
         requestedRole: OrgRole.EMPLOYEE,
       });
       setJoinSuccess("Join request submitted. Please wait for approval.");
-      setOrganizationIdToJoin("");
+      setOrganizationSlugToJoin("");
     } catch {
-      setJoinError("Could not submit join request. Verify organization ID.");
+      setJoinError("Could not submit join request. Verify organization slug.");
     }
   }
 
@@ -93,14 +93,15 @@ export function OnboardingPanel() {
       <form className="panel stack-sm" onSubmit={onRequestToJoin}>
         <h2>Request to join</h2>
         <p className="muted">
-          Ask an owner/admin for the organization ID and submit a request.
+          Enter the organization slug and submit a request.
         </p>
         <label className="stack-xs">
-          <span>Organization ID</span>
+          <span>Organization slug</span>
           <input
             className="input"
-            value={organizationIdToJoin}
-            onChange={(event) => setOrganizationIdToJoin(event.target.value)}
+            value={organizationSlugToJoin}
+            onChange={(event) => setOrganizationSlugToJoin(event.target.value)}
+            pattern="^[a-z0-9-]+$"
             required
           />
         </label>

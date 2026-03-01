@@ -2,50 +2,121 @@
 
 | Metric                   | Question To Evaluate                                                                       | Score (0-10) | Why?
 | ------------------------ | ------------------------------------------------------------------------------------------ | ------------ |--------------------------------------------------------------------
-| Idea Match               | Did the AI correctly implement the requested project idea and features?                    |              |
-| Architecture Quality     | Is the project structure clean, scalable, and logically separated (DB, API, UI, services)? |              |
-| Security + Authorization | Are roles, permissions, and data isolation correctly enforced in backend logic?            |              |
-| TypeScript Quality       | Is the code strongly typed, readable, and free of type safety shortcuts?                   |              |
-| Code Quality             | Is the code clean, maintainable, and not unnecessarily complex?                            |              |
-| Debugging Skill          | Did the AI correctly identify and fix bugs during review phase?                            |              |
-| Deployment Quality       | Does Docker + startup setup work with minimal manual fixing?                               |              |
-| Use Existing Solutions   | Did the AI use established libraries instead of reinventing functionality?                 |              |
-| Autonomy                 | How independently did the AI complete tasks without you guiding implementation?            |              |
+| Idea Match               | Did the AI correctly implement the requested project idea and features?                    |      9       | Core SaaS logic implemented correctly. All features exist. Errors were implementation-level, not conceptual misunderstanding.
+| Architecture Quality     | Is the project structure clean, scalable, and logically separated (DB, API, UI, services)? |      8       | Clean separation (services, routers, UI, Prisma). Some permission drift + minor type shortcuts reduce score slightly. No major structural flaw.
+| Security + Authorization | Are roles, permissions, and data isolation correctly enforced in backend logic?            |      8.5     | Backend role enforcement added correctly. Some UI gating drift initially, but backend protected core logic. No catastrophic multi-tenant failure.
+| TypeScript Quality       | Is the code strongly typed, readable, and free of type safety shortcuts?                   |      7.5     | Mostly strong typing, but unnecessary unknown types and minor looseness present. Not elite-level TS rigor.
+| Code Quality             | Is the code clean, maintainable, and not unnecessarily complex?                            |      7.5     | Clean, readable, pragmatic. Some unnecessary calls and UX handling imperfections. Not messy, not overengineered.
+| Debugging Skill          | Did the AI correctly identify and fix bugs during review phase?                            |      10      | This is strong. It correctly identified root causes every time and applied targeted fixes without breaking other parts. That’s senior-level debugging behavior.
+| Deployment Quality       | Does Docker + startup setup work with minimal manual fixing?                               |      10      | Docker rebuild worked. Prisma 7 migration handled correctly including adapter + generate + entrypoint hardening. That’s solid.
+| Use Existing Solutions   | Did the AI use established libraries instead of reinventing functionality?                 |      9       | Used Prisma, Zod, tRPC, proper libraries. Did not reinvent major systems. Good engineering pragmatism, but skipped UI libraries and instead used html+css
+| Autonomy                 | How independently did the AI complete tasks without you guiding implementation?            |      8.5     | It implemented full system itself, but I caught 9 issues. So it’s not autonomous perfection. Still high independence.
 
 Final Score =
-    ( Idea Match × 0.25 ) +
-    ( Autonomy × 0.25 ) +
-    ( Architecture Quality × 0.15 ) +
-    ( Security + Authorization × 0.15 ) +
-    ( Code Quality × 0.10 ) +
-    ( Debugging Skill × 0.05 ) +
-    ( Deployment Quality × 0.03 ) +
-    ( TypeScript Quality × 0.04 ) +
-    ( Use Existing Solutions × 0.03 )
+    ( 9 × 0.25 ) +
+    ( 8.5 × 0.25 ) +
+    ( 8 × 0.15 ) +
+    ( 8.5 × 0.15 ) +
+    ( 7.5 × 0.10 ) +
+    ( 10 × 0.05 ) +
+    ( 10 × 0.03 ) +
+    ( 7.5 × 0.04 ) +
+    ( 9 × 0.03 ) = 8.97
 
 Ignore everything else if these are low:
-    Idea Match
-    Autonomy
-    Security
+    Idea Match (9)
+    Autonomy (8.5)
+    Security (8.5)
 
 ⭐ Most Important Real Productivity Question (Answer Separately)
     How much did I personally need to correct, rewrite, or guide the AI to reach the final desired result?
+    ANSWARE: I did not manually write or rewrite any code. My role was reviewing, testing, and reporting issues. All fixes were resolved by the AI in single prompts. Total elapsed time was around 5-6 hours, but much of that included waiting and interaction overhead rather than active engineering work.
 
-Planning Score: ? / 10
-    Description:
+Planning Score: 8 / 10
+    Description: This score reflects strong high-level architecture planning with clear system boundaries, but with bugs.
 
-Implementation Score: ? / 10
-    Description:
+Implementation Score: 7.5 / 10
+    Description: This score reflects moderate good structural implementation with localized logic and state-sync bugs, rather than architectural failures or cascading system instability, meaning it required fixes but not major refactoring.
 
 Any other notes/observations?
+    It created a Prisma seed file and CI/CD verifications & build, which is useful. I didn’t ask for it, but it was a nice touch from Codex — I really liked that.
 
-Time to implement evrything was: ? h ? min 
+    ______________________________________________
+    ERROR
+
+    I can’t register. I get this error even though I’m using a valid email address: “Unable to register. Try another email."
+    Its bc of an implementation mistake. 
+    The AI responded and resolved it: debug-1.txt
+    ______________________________________________
+    ______________________________________________
+    ERROR
+
+    I created an organization, then tried to join it, but I couldn’t. The UI says the organization slug is not valid, and on the server side I see this error:
+        {"ts":"2026-03-01T14:55:54.278Z","level":"error","event":"api.trpc.error","requestId":"abfb22c8-f4ef-4450-9fdd-36d48f2c7e71","path":"joinRequest.create","code":"BAD_REQUEST"}
+    Its bc of an implementation mistake. 
+    The AI responded and resolved it: debug-2.txt
+    ______________________________________________
+    ______________________________________________
+    UX BUG  
+
+    As an employee, I can see the task creation form, which is misleading since I’m not allowed to use it.
+    Its bc of an implementation mistake. 
+    The AI responded and resolved it: debug-3.txt
+    _____________________________________________
+    ______________________________________________
+    BAD UI
+
+    The user role approval dropdown is hard to read due to poor color contrast.
+    This was an implementation mistake.
+    The AI responded and resolved it: debug-4.txt
+    ______________________________________________
+    ______________________________________________
+    BAD UX 
+ 
+    In the user join request flow, I encountered two issues:
+        If a user already belongs to another organization and I try to approve their old join request, I don’t see any UI error message.
+        After I approve a user as ADMIN, the UI still shows them as EMPLOYEE in the join requests section.
+    This was an implementation mistake.
+    The AI responded and resolved it: debug-5.txt
+    ______________________________________________
+    ______________________________________________
+    BUG 
+
+    With tasks, I noticed two problems:
+        I can reassign a task even if it has DONE status. If a task is completed, it should be frozen, and reassignment should not be possible.
+        When changing task status, I can’t skip directly to DONE from TODO because IN_PROGRESS must come next, which is correct. However, the UI should disable the DONE or otherwise unavailable buttons.
+    This was an implementation mistake.
+    The AI responded and resolved it: debug-6.txt
+    ______________________________________________
+    ______________________________________________
+    BAD UX
+
+    If I try to reassign a task to an invalid employee ID, I don’t see an error message.
+    The AI resolved it only on the second attempt, because at first it displayed the raw error JSON instead of a human-readable message, so I asked it to show only a proper user-friendly message.
+    This was an implementation mistake.
+    The AI responded and resolved it: debug-7.txt
+    ______________________________________________
+    ______________________________________________
+    DEPRECATED 
+
+    The code contains a bunch of deprecated function usage mostly tied to zod valdiation schema. 
+    This was an implementation mistake.
+    The AI responded and resolved it: debug-8.txt
+    ______________________________________________
+    ______________________________________________
+    DEPRECATED PRISMA USAGE
+
+    Prisma had a newer version than the one the AI initially used.
+    I asked the AI to upgrade the project to Prisma v7, which required significant logic restructuring. Major Prisma upgrades aren’t easy, but the AI managed to complete it.
+    AI response and resolution prompt: debug-9.txt
+    ______________________________________________
+
+    The code contains unnecessary unknown type(s), even though the input types can actually be determined.
+
+    I found an unnecessary function call in the code that unnecessarily slows down execution in its context, probebly this wasnt the only one.
+
+    GENERAL NOTE: This is not an issue, but it’s important to understand that the AI strictly follows the instructions provided. Since I did not request comments in the code, it did not include them.
+
+Time to implement evrything was: 1 h + production debugging (3 h 15 min with careful manual testing) 
 
 Monthly cost: $23
-
-
-
-
-
-Started at: 11:41 - 12:40
-

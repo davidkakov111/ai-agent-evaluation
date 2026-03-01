@@ -22,6 +22,7 @@ RUN npm run build
 
 FROM deps AS migrator
 COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
 COPY package.json package-lock.json ./
 ENV NODE_ENV=production
 CMD ["npm", "run", "prisma:deploy"]

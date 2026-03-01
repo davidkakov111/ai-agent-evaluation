@@ -1,0 +1,39 @@
+Great catch. This is an implementation maintenance issue (libraries evolved), not a planning mistake.
+I updated the code to avoid the deprecated APIs you listed, while preserving behavior.
+What I changed
+Replaced deprecated flatten() usage
+src/server/services/validation.ts
+src/app/api/auth/register/route.ts
+Switched from parsed.error.flatten() to z.treeifyError(parsed.error).
+Replaced deprecated .cuid()
+Used a reusable non-deprecated CUID schema pattern:
+z.string().regex(/^[cC][^\s-]{8,}$/, "Invalid cuid")
+Applied in:
+src/server/services/taskService.ts
+src/server/services/joinRequestService.ts
+src/server/api/routers/task.ts
+src/server/api/routers/joinRequest.ts
+src/server/api/routers/organization.ts
+src/server/api/routers/auth.ts
+Replaced deprecated .nativeEnum()
+Switched to:
+z.enum(TaskStatus)
+z.enum(OrgRole)
+z.enum(JoinRequestStatus)
+Applied in task/join service and router files listed above.
+Replaced deprecated .email() and .url()
+src/server/auth/schemas.ts: z.email() for email fields
+src/server/api/routers/auth.ts: z.email() in output schema
+src/lib/env.ts: z.url() for NEXTAUTH_URL
+Replaced deprecated ZodIssueCode
+src/lib/env.ts
+Switched from z.ZodIssueCode.custom to raw string "custom".
+Replaced deprecated React.FormEvent<HTMLFormElement>
+src/features/tasks/TaskWorkspace.tsx
+Switched to SyntheticEvent<HTMLFormElement, SubmitEvent> typing.
+Validation
+All checks pass after these changes:
+npm run lint ✅
+npm run typecheck ✅
+npm run test:run ✅
+If you want, I can do one extra sweep across the whole repo for any remaining deprecation warnings not in your listed files.

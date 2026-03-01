@@ -4,6 +4,8 @@ import { withTrpcErrorHandling } from "@/server/api/errorMapper";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { organizationService } from "@/server/services/organizationService";
 
+const cuidSchema = z.string().regex(/^[cC][^\s-]{8,}$/, "Invalid cuid");
+
 const createOrganizationInputSchema = z.object({
   name: z.string().trim().min(2).max(100),
   slug: z
@@ -16,17 +18,17 @@ const createOrganizationInputSchema = z.object({
 
 const createOrganizationOutputSchema = z.object({
   organization: z.object({
-    id: z.string().cuid(),
+    id: cuidSchema,
     name: z.string(),
     slug: z.string(),
-    createdById: z.string().cuid(),
+    createdById: cuidSchema,
     createdAt: z.date(),
     updatedAt: z.date(),
   }),
   membership: z.object({
-    id: z.string().cuid(),
-    userId: z.string().cuid(),
-    organizationId: z.string().cuid(),
+    id: cuidSchema,
+    userId: cuidSchema,
+    organizationId: cuidSchema,
     role: z.enum(["OWNER", "ADMIN", "EMPLOYEE"]),
     createdAt: z.date(),
     updatedAt: z.date(),

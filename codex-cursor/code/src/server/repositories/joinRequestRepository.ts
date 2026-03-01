@@ -121,6 +121,7 @@ export const joinRequestRepository = {
       status: Exclude<JoinRequestStatus, "PENDING">;
       decidedById: string;
       decidedAt: Date;
+      requestedRole?: OrgRole;
     },
   ) {
     const updateResult = await db.joinRequest.updateMany({
@@ -132,6 +133,7 @@ export const joinRequestRepository = {
         status: input.status,
         decidedById: input.decidedById,
         decidedAt: input.decidedAt,
+        ...(input.requestedRole ? { requestedRole: input.requestedRole } : {}),
       },
     });
 

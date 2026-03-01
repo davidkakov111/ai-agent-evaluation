@@ -1,0 +1,23 @@
+You’re right to flag it. This one was an implementation mistake, not a planning/prompt issue.
+Why it happened
+Join request API expected a CUID organization ID (organizationId), but after creating an org users naturally try to join by slug.
+Passing slug into an ID-only input caused validation failure and server logged:
+path":"joinRequest.create","code":"BAD_REQUEST"
+Fix I applied
+I updated the join flow to support slug properly (and still allow ID):
+src/server/api/routers/joinRequest.ts
+joinRequest.create now accepts either:
+organizationId (CUID), or
+organizationSlug (slug format)
+resolves slug -> org ID server-side before calling service
+src/features/organization/OnboardingPanel.tsx
+UI now asks for Organization slug
+sends organizationSlug instead of organizationId
+updates error/help text accordingly
+Also cleaned a related lint/type issue:
+eslint.config.mjs now ignores coverage/** so zero-warning lint isn’t tripped by generated files.
+Validation
+npm run lint ✅
+npm run typecheck ✅
+tests remain green from previous run; if you want I can run full tests again right now.
+You can now create org with slug (e.g. acme-team) and join using that slug directly.

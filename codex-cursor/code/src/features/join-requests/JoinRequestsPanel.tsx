@@ -25,6 +25,14 @@ export function JoinRequestsPanel(props: JoinRequestsPanelProps) {
   });
 
   const [assignedRole, setAssignedRole] = useState<OrgRole>(OrgRole.EMPLOYEE);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  function formatMutationError(error: unknown): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+      return error.message;
+    }
+    return "Could not complete join request action.";
+  }
 
   if (joinRequestsQuery.isLoading) {
     return <p className="panel">Loading join requests...</p>;
@@ -41,6 +49,7 @@ export function JoinRequestsPanel(props: JoinRequestsPanelProps) {
   return (
     <section className="panel stack-sm">
       <h2>Join requests</h2>
+      {actionError ? <p className="banner error">{actionError}</p> : null}
       <ul className="stack-sm">
         {joinRequestsQuery.data.map((request) => (
           <li key={request.id} className="panel inner stack-xs">
@@ -57,21 +66,30 @@ export function JoinRequestsPanel(props: JoinRequestsPanelProps) {
             {props.canManage && request.status === "PENDING" ? (
               <div className="row gap-sm wrap">
                 <select
-                  className="input"
+                  className="input join-role-select"
                   value={assignedRole}
                   onChange={(event) => setAssignedRole(event.target.value as OrgRole)}
                 >
-                  <option value={OrgRole.ADMIN}>ADMIN</option>
-                  <option value={OrgRole.EMPLOYEE}>EMPLOYEE</option>
+                  <option value={OrgRole.ADMIN}>
+                    ADMIN
+                  </option>
+                  <option value={OrgRole.EMPLOYEE}>
+                    EMPLOYEE
+                  </option>
                 </select>
                 <button
                   className="button"
                   type="button"
-                  onClick={() => {
-                    approveMutation.mutate({
-                      joinRequestId: request.id,
-                      assignedRole,
-                    });
+                  onClick={async () => {
+                    setActionError(null);
+                    try {
+                      await approveMutation.mutateAsync({
+                        joinRequestId: request.id,
+                        assignedRole,
+                      });
+                    } catch (error: unknown) {
+                      setActionError(formatMutationError(error));
+                    }
                   }}
                   disabled={approveMutation.isPending}
                 >
@@ -80,8 +98,13 @@ export function JoinRequestsPanel(props: JoinRequestsPanelProps) {
                 <button
                   className="button secondary"
                   type="button"
-                  onClick={() => {
-                    rejectMutation.mutate({ joinRequestId: request.id });
+                  onClick={async () => {
+                    setActionError(null);
+                    try {
+                      await rejectMutation.mutateAsync({ joinRequestId: request.id });
+                    } catch (error: unknown) {
+                      setActionError(formatMutationError(error));
+                    }
                   }}
                   disabled={rejectMutation.isPending}
                 >

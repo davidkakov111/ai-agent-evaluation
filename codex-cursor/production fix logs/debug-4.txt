@@ -1,0 +1,33 @@
+This is an implementation/UI styling issue, not a planning mistake.
+I can fix it quickly by styling the select/options explicitly (e.g., color: #111) so role options are readable on white backgrounds in all themes.
+If you want, I’ll apply it now to the join-approval dropdown component.
+
+Applied.
+I updated the join-approval dropdown so role text is explicitly dark/black:
+src/features/join-requests/JoinRequestsPanel.tsx
+select now has style={{ color: "#111111" }}
+both options also explicitly set color: "#111111"
+Validation:
+npm run lint ✅
+npm run typecheck ✅
+This was an implementation styling issue, not a planning mistake.
+
+
+
+
+Fixed.
+The dropdown now uses a dedicated class so both:
+the closed select control, and
+the opened options list
+render with consistent readable colors (white background + dark text).
+Changes made
+src/features/join-requests/JoinRequestsPanel.tsx
+switched from inline styles to className="input join-role-select"
+src/app/globals.css
+added:
+.join-role-select {  background: #ffffff;  color: #111111;}.join-role-select option {  background: #ffffff;  color: #111111;}
+Validation
+npm run lint ✅
+npm run typecheck ✅
+So now you should no longer get black-on-black in the closed state while keeping options readable when opened.
+

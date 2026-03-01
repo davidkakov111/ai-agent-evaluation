@@ -19,30 +19,32 @@ import {
 } from "@/server/services/errors";
 import { parseInput } from "@/server/services/validation";
 
+const cuidSchema = z.string().regex(/^[cC][^\s-]{8,}$/, "Invalid cuid");
+
 const createTaskSchema = z.object({
-  actorUserId: z.string().cuid(),
-  organizationId: z.string().cuid(),
-  assignedToId: z.string().cuid(),
+  actorUserId: cuidSchema,
+  organizationId: cuidSchema,
+  assignedToId: cuidSchema,
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
-  status: z.nativeEnum(TaskStatus).optional(),
+  status: z.enum(TaskStatus).optional(),
 });
 
 const listVisibleTasksSchema = z.object({
-  actorUserId: z.string().cuid(),
-  organizationId: z.string().cuid(),
+  actorUserId: cuidSchema,
+  organizationId: cuidSchema,
 });
 
 const updateTaskStatusSchema = z.object({
-  actorUserId: z.string().cuid(),
-  taskId: z.string().cuid(),
-  status: z.nativeEnum(TaskStatus),
+  actorUserId: cuidSchema,
+  taskId: cuidSchema,
+  status: z.enum(TaskStatus),
 });
 
 const assignTaskSchema = z.object({
-  actorUserId: z.string().cuid(),
-  taskId: z.string().cuid(),
-  assignedToId: z.string().cuid(),
+  actorUserId: cuidSchema,
+  taskId: cuidSchema,
+  assignedToId: cuidSchema,
 });
 
 const allowedTaskTransitions: Record<TaskStatus, readonly TaskStatus[]> = {
@@ -119,6 +121,7 @@ export const taskService = {
       organizationId: actorMembership.organizationId,
     });
 
+    // TOD0: THis seems redundant ....
     await requireOrgMember(db, {
       userId: parsed.actorUserId,
       organizationId: task.organizationId,
@@ -172,6 +175,9 @@ export const taskService = {
       taskId: parsed.taskId,
       organizationId: actorMembership.organizationId,
     });
+    if (task.status === TaskStatus.DONE) {
+      throw new InvalidTransitionError("Completed tasks cannot be reassigned.");
+    }
 
     const assigneeMembership = await requireOrgMember(db, {
       userId: parsed.assignedToId,

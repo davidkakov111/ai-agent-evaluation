@@ -19,25 +19,27 @@ import {
 } from "@/server/services/errors";
 import { parseInput } from "@/server/services/validation";
 
+const cuidSchema = z.string().regex(/^[cC][^\s-]{8,}$/, "Invalid cuid");
+
 const createJoinRequestSchema = z.object({
-  userId: z.string().cuid(),
-  organizationId: z.string().cuid(),
+  userId: cuidSchema,
+  organizationId: cuidSchema,
   requestedRole: z
-    .nativeEnum(OrgRole)
+    .enum(OrgRole)
     .refine((role) => role !== OrgRole.OWNER, "Cannot request OWNER role.")
     .optional()
     .default(OrgRole.EMPLOYEE),
 });
 
 const decideJoinRequestSchema = z.object({
-  actorUserId: z.string().cuid(),
-  joinRequestId: z.string().cuid(),
+  actorUserId: cuidSchema,
+  joinRequestId: cuidSchema,
   decision: z.enum([JoinRequestStatus.APPROVED, JoinRequestStatus.REJECTED]),
-  assignedRole: z.nativeEnum(OrgRole).optional(),
+  assignedRole: z.enum(OrgRole).optional(),
 });
 
 const listJoinRequestsSchema = z.object({
-  actorUserId: z.string().cuid(),
+  actorUserId: cuidSchema,
 });
 
 export const joinRequestService = {
@@ -150,6 +152,9 @@ export const joinRequestService = {
         status: parsed.decision,
         decidedById: parsed.actorUserId,
         decidedAt: new Date(),
+        ...(parsed.decision === JoinRequestStatus.APPROVED
+          ? { requestedRole: parsed.assignedRole ?? joinRequest.requestedRole }
+          : {}),
       });
 
       if (!decidedRequest) {

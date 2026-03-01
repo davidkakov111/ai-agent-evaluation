@@ -12,7 +12,7 @@ export default async function DashboardPage() {
       <p className="muted">
         Role: <strong>{session?.user?.role ?? "UNKNOWN"}</strong>
       </p>
-      <TaskWorkspace canManage={canManage} />
+      <TaskWorkspace />
       <JoinRequestsPanel canManage={canManage} />
     </section>
   );

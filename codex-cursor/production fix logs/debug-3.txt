@@ -1,0 +1,19 @@
+Yes — this is an implementation mistake (UI permission gating), not a planning or prompt mistake.
+What was wrong
+The task creation form visibility depended on a server-prop (canManage) and could drift from the actual current auth state in the client.
+Fix applied
+I updated task UI gating to use the live authenticated role from trpc.auth.me:
+src/features/tasks/TaskWorkspace.tsx
+Removed prop-based gating
+Added me query
+Shows create/reassign controls only when role is OWNER or ADMIN
+And updated callers:
+src/app/(app)/(org)/dashboard/page.tsx
+now uses <TaskWorkspace />
+src/app/(app)/(org)/tasks/page.tsx
+now uses <TaskWorkspace />
+removed unused session logic
+Validation
+npm run lint ✅
+npm run typecheck ✅
+Now employees should no longer see the task creation form, which aligns UI with backend authorization.

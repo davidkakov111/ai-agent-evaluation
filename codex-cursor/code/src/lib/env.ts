@@ -4,14 +4,14 @@ const envSchema = z
   .object({
     NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
     DATABASE_URL: z.string().min(1),
-    NEXTAUTH_URL: z.string().url(),
+    NEXTAUTH_URL: z.url(),
     NEXTAUTH_SECRET: z.string().min(32).optional(),
     MAX_BODY_SIZE_BYTES: z.coerce.number().int().positive().default(1_048_576),
   })
   .superRefine((value, ctx) => {
     if (value.NODE_ENV === "production" && !value.NEXTAUTH_SECRET) {
       ctx.addIssue({
-        code: z.ZodIssueCode.custom,
+        code: "custom",
         message: "NEXTAUTH_SECRET is required in production.",
         path: ["NEXTAUTH_SECRET"],
       });

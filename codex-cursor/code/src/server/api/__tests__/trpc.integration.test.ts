@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { existsSync, rmSync } from "node:fs";
 import { join } from "node:path";
 
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { JoinRequestStatus, OrgRole, PrismaClient, TaskStatus } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import type { Session } from "next-auth";
@@ -30,6 +31,19 @@ let prisma: PrismaClient;
 let seed: SeedState;
 let testDbPath = "";
 let testDbUrl = "";
+
+function resolveSqliteUrl(databaseUrl: string): string {
+  if (!databaseUrl.startsWith("file:")) {
+    return databaseUrl;
+  }
+
+  const rawPath = databaseUrl.slice("file:".length);
+  if (rawPath.startsWith("/") || rawPath.startsWith(":memory:")) {
+    return databaseUrl;
+  }
+
+  return `file:${join(process.cwd(), rawPath)}`;
+}
 
 function createSession(input: {
   id: string;
@@ -205,13 +219,10 @@ describe.sequential("tRPC integration workflows", () => {
       stdio: "pipe",
     });
 
-    prisma = new PrismaClient({
-      datasources: {
-        db: {
-          url: testDbUrl,
-        },
-      },
+    const adapter = new PrismaBetterSqlite3({
+      url: resolveSqliteUrl(testDbUrl),
     });
+    prisma = new PrismaClient({ adapter });
 
     seed = await seedDatabase(prisma);
   });

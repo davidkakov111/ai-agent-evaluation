@@ -1,0 +1,19 @@
+Both are implementation mistakes, not planning mistakes.
+What I fixed
+No UI error shown when approve/reject fails
+File: src/features/join-requests/JoinRequestsPanel.tsx
+Changed approve/reject handlers to use mutateAsync + try/catch
+Added visible error banner (actionError) so failures like “user already belongs to an organization” are shown in UI
+Approved as ADMIN but UI still shows EMPLOYEE
+Root cause: join request display used requestedRole, which wasn’t updated on approval with overridden role.
+Files:
+src/server/repositories/joinRequestRepository.ts
+src/server/services/joinRequestService.ts
+On approval, the selected assignedRole is now persisted to the join request’s role field during decision update, so UI reflects the approved role.
+Verification
+npm run lint ✅
+npm run typecheck ✅
+npm run test:run ✅
+So now:
+approval errors should appear clearly in UI,
+approved role display should match what you selected (e.g., ADMIN).

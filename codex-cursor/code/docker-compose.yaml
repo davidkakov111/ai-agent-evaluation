@@ -6,6 +6,13 @@ services:
       target: migrator
     env_file:
       - .env.docker
+    command: >
+      sh -c "set -e
+      && mkdir -p /app/data
+      && chown -R 1001:1001 /app/data
+      && npm run prisma:deploy
+      && chown -R 1001:1001 /app/data
+      && chmod -R u+rwX /app/data"
     volumes:
       - taskflow_data:/app/data
     restart: "no"

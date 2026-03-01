@@ -1,16 +1,13 @@
 "use client";
 
 import { TaskStatus } from "@prisma/client";
-import { useState } from "react";
+import { type SyntheticEvent, useState } from "react";
 
 import { trpc } from "@/lib/trpc/react";
 
-type TaskWorkspaceProps = {
-  canManage: boolean;
-};
-
-export function TaskWorkspace(props: TaskWorkspaceProps) {
+export function TaskWorkspace() {
   const utils = trpc.useUtils();
+  const meQuery = trpc.auth.me.useQuery();
   const tasksQuery = trpc.task.list.useQuery();
 
   const createTask = trpc.task.create.useMutation({
@@ -38,6 +35,18 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
   const [description, setDescription] = useState("");
   const [assignedToId, setAssignedToId] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
+  const [assignErrorByTaskId, setAssignErrorByTaskId] = useState<
+    Record<string, string | undefined>
+  >({});
+
+  const allowedTransitions: Record<TaskStatus, readonly TaskStatus[]> = {
+    TODO: [TaskStatus.IN_PROGRESS],
+    IN_PROGRESS: [TaskStatus.TODO, TaskStatus.DONE],
+    DONE: [TaskStatus.IN_PROGRESS],
+  };
+
+  const effectiveCanManage =
+    meQuery.data?.role === "OWNER" || meQuery.data?.role === "ADMIN";
 
   if (tasksQuery.isLoading) {
     return <p className="panel">Loading tasks...</p>;
@@ -47,7 +56,7 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
     return <p className="banner error">Failed to load tasks.</p>;
   }
 
-  async function onCreateTask(event: React.FormEvent<HTMLFormElement>) {
+  async function onCreateTask(event: SyntheticEvent<HTMLFormElement, SubmitEvent>) {
     event.preventDefault();
     setCreateError(null);
 
@@ -63,9 +72,31 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
     }
   }
 
+  function formatAssignError(error: unknown): string {
+    if (error instanceof Error && error.message.trim().length > 0) {
+      const lowerMessage = error.message.toLowerCase();
+
+      if (lowerMessage.includes("invalid cuid") || lowerMessage.includes("assignedtoid")) {
+        return "Employee ID format is invalid.";
+      }
+      if (
+        lowerMessage.includes("not a member of this organization") ||
+        lowerMessage.includes("tasks can only be assigned to employees")
+      ) {
+        return "Employee ID is invalid for your organization.";
+      }
+      if (lowerMessage.includes("completed tasks cannot be reassigned")) {
+        return "Completed tasks cannot be reassigned.";
+      }
+
+      return "Could not reassign task. Verify employee ID and permissions.";
+    }
+    return "Could not reassign task. Verify employee ID and permissions.";
+  }
+
   return (
     <section className="stack-md">
-      {props.canManage ? (
+      {effectiveCanManage ? (
         <form className="panel stack-sm" onSubmit={onCreateTask}>
           <h2>Create task</h2>
           <label className="stack-xs">
@@ -125,7 +156,10 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
                   onClick={() =>
                     updateStatus.mutate({ taskId: task.id, status: TaskStatus.TODO })
                   }
-                  disabled={updateStatus.isPending}
+                  disabled={
+                    updateStatus.isPending ||
+                    !allowedTransitions[task.status].includes(TaskStatus.TODO)
+                  }
                 >
                   TODO
                 </button>
@@ -138,7 +172,10 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
                       status: TaskStatus.IN_PROGRESS,
                     })
                   }
-                  disabled={updateStatus.isPending}
+                  disabled={
+                    updateStatus.isPending ||
+                    !allowedTransitions[task.status].includes(TaskStatus.IN_PROGRESS)
+                  }
                 >
                   IN_PROGRESS
                 </button>
@@ -148,22 +185,39 @@ export function TaskWorkspace(props: TaskWorkspaceProps) {
                   onClick={() =>
                     updateStatus.mutate({ taskId: task.id, status: TaskStatus.DONE })
                   }
-                  disabled={updateStatus.isPending}
+                  disabled={
+                    updateStatus.isPending ||
+                    !allowedTransitions[task.status].includes(TaskStatus.DONE)
+                  }
                 >
                   DONE
                 </button>
               </div>
 
-              {props.canManage ? (
+              {effectiveCanManage && task.status !== TaskStatus.DONE ? (
                 <AssignTaskInline
-                  onAssign={(nextAssignedToId) => {
-                    assignTask.mutate({
-                      taskId: task.id,
-                      assignedToId: nextAssignedToId,
-                    });
+                  onAssign={async (nextAssignedToId) => {
+                    setAssignErrorByTaskId((prev) => ({
+                      ...prev,
+                      [task.id]: undefined,
+                    }));
+                    try {
+                      await assignTask.mutateAsync({
+                        taskId: task.id,
+                        assignedToId: nextAssignedToId,
+                      });
+                    } catch (error: unknown) {
+                      setAssignErrorByTaskId((prev) => ({
+                        ...prev,
+                        [task.id]: formatAssignError(error),
+                      }));
+                    }
                   }}
                   isPending={assignTask.isPending}
                 />
+              ) : null}
+              {assignErrorByTaskId[task.id] ? (
+                <p className="banner error">{assignErrorByTaskId[task.id]}</p>
               ) : null}
             </li>
           ))}

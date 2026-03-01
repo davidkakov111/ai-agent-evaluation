@@ -1,0 +1,26 @@
+Fixed.
+Now if reassignment fails (including invalid employee ID), the UI shows a clear error message on that task card.
+What changed
+src/features/tasks/TaskWorkspace.tsx
+Added per-task error state: assignErrorByTaskId
+Switched reassignment action to await assignTask.mutateAsync(...) with try/catch
+Displays a banner error under the relevant task when reassignment fails
+Keeps existing success behavior (task list invalidation) unchanged
+Validation
+npm run lint ✅
+npm run typecheck ✅
+So now invalid reassignment attempts are visible in the UI instead of failing silently.
+
+Agreed — that message was not user-friendly.
+I updated the task reassignment error handling to map technical validation errors into readable UI text.
+Now shown instead of raw JSON
+Invalid CUID / malformed assignedToId → “Employee ID format is invalid.”
+User not in org / not employee → “Employee ID is invalid for your organization.”
+DONE task reassignment attempt → “Completed tasks cannot be reassigned.”
+Other failures → generic safe message
+File updated
+src/features/tasks/TaskWorkspace.tsx
+Validation
+npm run lint ✅
+npm run typecheck ✅
+If you want, I can apply the same friendly-error mapping pattern to join-request mutations too so all mutation errors are consistently human-readable.

@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { z } from "zod";
 import { NextResponse } from "next/server";
 
 import { logger } from "@/lib/logger";
@@ -37,7 +38,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!parsed.success) {
     logger.warn("auth.register.validation_failed", { requestId });
     return NextResponse.json(
-      { error: "Invalid registration payload.", issues: parsed.error.flatten() },
+      { error: "Invalid registration payload.", issues: z.treeifyError(parsed.error) },
       { status: 400 },
     );
   }

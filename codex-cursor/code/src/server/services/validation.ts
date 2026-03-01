@@ -1,4 +1,4 @@
-import type { z } from "zod";
+import { z } from "zod";
 
 import { ValidationError } from "@/server/services/errors";
 
@@ -8,7 +8,7 @@ export function parseInput<TSchema extends z.ZodType>(
 ): z.infer<TSchema> {
   const parsed = schema.safeParse(input);
   if (!parsed.success) {
-    throw new ValidationError("Input validation failed.", parsed.error.flatten());
+    throw new ValidationError("Input validation failed.", z.treeifyError(parsed.error));
   }
 
   return parsed.data;

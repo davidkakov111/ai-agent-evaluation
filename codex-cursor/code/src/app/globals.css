@@ -105,6 +105,16 @@ form {
   color: inherit;
 }
 
+.join-role-select {
+  background: #ffffff;
+  color: #111111;
+}
+
+.join-role-select option {
+  background: #ffffff;
+  color: #111111;
+}
+
 textarea.input {
   min-height: 120px;
   resize: vertical;

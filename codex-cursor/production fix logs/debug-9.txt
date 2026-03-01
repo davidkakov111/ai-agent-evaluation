@@ -1,0 +1,32 @@
+Upgraded your project to Prisma 7 and fixed the deprecated datasource configuration error without breaking existing architecture.
+What I changed
+Upgraded dependencies in package.json:
+prisma → ^7.4.2
+@prisma/client → ^7.4.2
+added dotenv
+added @prisma/adapter-better-sqlite3
+Added prisma.config.ts and moved datasource URL config there (Prisma 7 style).
+Removed deprecated datasource URL from prisma/schema.prisma:
+removed url = env("DATABASE_URL") from datasource db.
+Updated Prisma client initialization to Prisma 7 adapter pattern:
+src/server/db.ts
+prisma/seed.ts
+src/server/api/__tests__/trpc.integration.test.ts
+Added resilient SQLite URL resolution for relative file: paths in those client init points.
+Added test env bootstrap for Vitest:
+src/test/setup-env.ts
+wired via setupFiles in vitest.config.ts
+Fixed Docker migration stage:
+Dockerfile now copies prisma.config.ts into the migrator image so prisma migrate deploy can read datasource config.
+Removed legacy package-level Prisma seed config from package.json (seed now defined in prisma.config.ts).
+Verification I ran
+npm run prisma:generate ✅
+npm run lint ✅
+npm run typecheck ✅
+npm run test:run ✅
+docker compose down -v && docker compose up --build -d ✅
+docker compose logs migrate shows migrations applied successfully ✅
+curl http://localhost:3000 returned OK ✅
+Important note
+I kept your existing Prisma generator/provider style (prisma-client-js) for compatibility with current imports and to minimize churn.
+You are now on Prisma 7 with the deprecated datasource usage fixed. If you want, I can do a second-phase migration to the newer prisma-client generator/output model too.

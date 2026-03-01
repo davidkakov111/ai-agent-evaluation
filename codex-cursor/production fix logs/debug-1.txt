@@ -1,0 +1,26 @@
+You’re hitting implementation/runtime issues, not a prompt/planning mistake.
+From your log snippet, there are two separate problems:
+attempt to write a readonly database
+This is why registration failed with "Unable to register. Try another email." — the app could not write to SQLite in Docker volume.
+JWT_SESSION_ERROR decryption operation failed
+This is usually stale cookies or changed NEXTAUTH_SECRET between runs.
+What was wrong
+The app runs as non-root user (nextjs), but the SQLite file/volume ownership could be root-owned.
+Result: Prisma create/update operations failed with readonly DB.
+NextAuth JWT decryption errors were unrelated to email validity; they come from token secret mismatch or old cookies.
+I fixed it in the codebase
+Updated docker-compose.yaml so migration startup does:
+create /app/data
+chown -R 1001:1001 /app/data
+then run prisma migrate deploy
+This ensures DB file permissions are correct before app starts.
+Verified registration now succeeds in Docker (201 response).
+What you should do now
+From project root:
+cp .env.docker.example .env.dockerdocker compose down -vdocker compose up --build
+Then:
+Clear browser cookies for localhost:3000 (or open incognito) to remove old JWT tokens.
+Retry registration/login.
+Why your previous run failed even with valid email
+Because the failure was DB write permission, not email validation.
+The frontend showed a generic registration error message, masking the real backend error.

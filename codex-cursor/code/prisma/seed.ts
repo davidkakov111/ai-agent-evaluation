@@ -1,7 +1,25 @@
 import bcrypt from "bcryptjs";
 import { PrismaClient, OrgRole, JoinRequestStatus, TaskStatus } from "@prisma/client";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { resolve } from "node:path";
 
-const prisma = new PrismaClient();
+function resolveSqliteUrl(databaseUrl: string): string {
+  if (!databaseUrl.startsWith("file:")) {
+    return databaseUrl;
+  }
+
+  const rawPath = databaseUrl.slice("file:".length);
+  if (rawPath.startsWith("/") || rawPath.startsWith(":memory:")) {
+    return databaseUrl;
+  }
+
+  return `file:${resolve(process.cwd(), rawPath)}`;
+}
+
+const adapter = new PrismaBetterSqlite3({
+  url: resolveSqliteUrl(process.env.DATABASE_URL ?? "file:./prisma/dev.db"),
+});
+const prisma = new PrismaClient({ adapter });
 
 async function main(): Promise<void> {
   const ownerPasswordHash = await bcrypt.hash("OwnerPass123!", 12);

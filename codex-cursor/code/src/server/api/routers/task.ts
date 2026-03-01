@@ -7,33 +7,35 @@ import { createTRPCRouter, orgMemberProcedure, roleProcedure } from "@/server/ap
 import { ForbiddenError } from "@/server/services/errors";
 import { taskService } from "@/server/services/taskService";
 
+const cuidSchema = z.string().regex(/^[cC][^\s-]{8,}$/, "Invalid cuid");
+
 const taskOutputSchema = z.object({
-  id: z.string().cuid(),
-  organizationId: z.string().cuid(),
-  createdById: z.string().cuid(),
-  assignedToId: z.string().cuid(),
+  id: cuidSchema,
+  organizationId: cuidSchema,
+  createdById: cuidSchema,
+  assignedToId: cuidSchema,
   title: z.string(),
   description: z.string(),
-  status: z.nativeEnum(TaskStatus),
+  status: z.enum(TaskStatus),
   createdAt: z.date(),
   updatedAt: z.date(),
 });
 
 const createTaskInputSchema = z.object({
-  assignedToId: z.string().cuid(),
+  assignedToId: cuidSchema,
   title: z.string().trim().min(1).max(200),
   description: z.string().trim().min(1).max(5000),
-  status: z.nativeEnum(TaskStatus).optional(),
+  status: z.enum(TaskStatus).optional(),
 });
 
 const assignTaskInputSchema = z.object({
-  taskId: z.string().cuid(),
-  assignedToId: z.string().cuid(),
+  taskId: cuidSchema,
+  assignedToId: cuidSchema,
 });
 
 const updateTaskStatusInputSchema = z.object({
-  taskId: z.string().cuid(),
-  status: z.nativeEnum(TaskStatus),
+  taskId: cuidSchema,
+  status: z.enum(TaskStatus),
 });
 
 export const taskRouter = createTRPCRouter({
