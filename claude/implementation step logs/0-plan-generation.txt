@@ -1,0 +1,1351 @@
+TaskFlow - Multi-Tenant Task Management SaaS Implementation Plan
+
+Technology Decisions
+
+
+
+
+
+
+
+Concern
+
+
+
+Choice
+
+
+
+Rationale
+
+
+
+
+
+Framework
+
+
+
+Next.js 15.x (App Router)
+
+
+
+Latest stable, RSC support
+
+
+
+
+
+API
+
+
+
+tRPC v11
+
+
+
+Type-safe API with middleware auth
+
+
+
+
+
+Auth
+
+
+
+Auth.js v5 + Credentials provider
+
+
+
+Production-grade auth, Prisma adapter
+
+
+
+
+
+Session
+
+
+
+JWT strategy
+
+
+
+Stateless, no extra DB tables for sessions, works well with SQLite
+
+
+
+
+
+ORM
+
+
+
+Prisma (latest)
+
+
+
+Type-safe DB access, SQLite support
+
+
+
+
+
+DB
+
+
+
+SQLite (file-based)
+
+
+
+Per requirements
+
+
+
+
+
+Validation
+
+
+
+Zod
+
+
+
+Shared schemas between client/server
+
+
+
+
+
+Hashing
+
+
+
+bcryptjs
+
+
+
+Pure JS, no native deps
+
+
+
+
+
+Testing
+
+
+
+Vitest
+
+
+
+Fast, TS-native, ESM support
+
+
+
+
+
+UI
+
+
+
+Tailwind CSS + shadcn/ui
+
+
+
+Rapid, consistent, accessible UI
+
+
+
+
+
+State
+
+
+
+TanStack React Query v5
+
+
+
+Required by tRPC v11
+
+Architecture Overview
+
+src/
+  app/                    # Next.js App Router pages + layouts
+    (auth)/               # Auth pages (login, register)
+    (dashboard)/          # Protected dashboard pages
+    api/trpc/[trpc]/      # tRPC HTTP handler
+    api/auth/[...nextauth]/ # Auth.js route handler
+  server/
+    auth.ts               # Auth.js configuration
+    db.ts                 # Prisma client singleton
+    trpc/
+      init.ts             # tRPC initialization, context, base procedures
+      routers/            # tRPC routers (auth, org, task, joinRequest)
+      root.ts             # Merged app router
+    services/             # Pure business logic (no HTTP/tRPC dependency)
+      auth.service.ts
+      org.service.ts
+      task.service.ts
+      join-request.service.ts
+  lib/
+    trpc/
+      client.ts           # tRPC client-side setup
+      server.ts           # tRPC server-side caller
+      query-client.ts     # TanStack Query client
+    validators/           # Shared Zod schemas
+  components/             # React components
+prisma/
+  schema.prisma
+__tests__/                # Unit tests
+
+The key architectural principle: services contain all business logic and validation (testable in isolation), tRPC routers are thin wrappers that call services and handle auth via middleware.
+
+
+
+Step 1: Project Scaffolding and Tooling
+
+Layers affected: Build system, project config
+
+Actions:
+
+
+
+
+
+Initialize Next.js 15 project with TypeScript strict mode, App Router, Tailwind CSS, and src/ directory via create-next-app
+
+
+
+Install core dependencies:
+
+
+
+
+
+@trpc/server@11 @trpc/client@11 @trpc/tanstack-react-query@11 @tanstack/react-query@5 superjson zod server-only client-only
+
+
+
+prisma @prisma/client
+
+
+
+next-auth@5 @auth/prisma-adapter bcryptjs
+
+
+
+@types/bcryptjs (dev)
+
+
+
+vitest (dev)
+
+
+
+Configure tsconfig.json with strict: true, path aliases (@/* pointing to src/*)
+
+
+
+Create .gitignore with: node_modules/, .next/, prisma/*.db, prisma/*.db-journal, .env, .env.local
+
+
+
+Create .env with DATABASE_URL="file:./dev.db" and AUTH_SECRET (generated via npx auth secret)
+
+
+
+Install and configure shadcn/ui for component library
+
+Risks/Considerations:
+
+
+
+
+
+Ensure AUTH_SECRET is never committed; .env must be in .gitignore
+
+
+
+tRPC v11 requires TanStack Query v5.59.15+; pin compatible versions
+
+
+
+SQLite file path in DATABASE_URL is relative to the prisma/ directory
+
+
+
+Step 2: Prisma Schema and Database Setup
+
+Layers affected: Database
+
+Actions:
+
+
+
+
+
+Run npx prisma init --datasource-provider sqlite
+
+
+
+Define the complete schema in prisma/schema.prisma:
+
+model User {
+  id             String          @id @default(cuid())
+  email          String          @unique
+  name           String
+  passwordHash   String
+  organizationId String?
+  role           MemberRole?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization?   @relation(fields: [organizationId], references: [id])
+  joinRequests   JoinRequest[]
+  assignedTasks  Task[]          @relation("AssignedTo")
+  createdTasks   Task[]          @relation("CreatedBy")
+}
+
+model Organization {
+  id          String        @id @default(cuid())
+  name        String        @unique
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  members     User[]
+  tasks       Task[]
+  joinRequests JoinRequest[]
+}
+
+model Task {
+  id             String       @id @default(cuid())
+  title          String
+  description    String       @default("")
+  status         TaskStatus   @default(TODO)
+  organizationId String
+  assigneeId     String?
+  creatorId      String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  assignee       User?        @relation("AssignedTo", fields: [assigneeId], references: [id])
+  creator        User         @relation("CreatedBy", fields: [creatorId], references: [id])
+}
+
+model JoinRequest {
+  id             String            @id @default(cuid())
+  userId         String
+  organizationId String
+  status         JoinRequestStatus @default(PENDING)
+  assignedRole   MemberRole?
+  reviewedBy     String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  user           User              @relation(fields: [userId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  EMPLOYEE
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  DONE
+}
+
+enum JoinRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+
+
+
+
+Run npx prisma db push to apply schema (or npx prisma migrate dev --name init for migration history)
+
+
+
+Create src/server/db.ts with Prisma client singleton pattern (global cache in dev to avoid hot-reload connection leaks)
+
+Risks/Considerations:
+
+
+
+
+
+The User model embeds organizationId and role directly (denormalized) rather than a separate Membership table. This simplifies queries and enforces the "one org per user" constraint naturally. The role is nullable because users start without an org.
+
+
+
+@@unique([userId, organizationId]) on JoinRequest prevents duplicate requests
+
+
+
+SQLite doesn't support enums natively; Prisma handles this via string mapping
+
+
+
+We intentionally do NOT include Auth.js's default Account/Session models since we use JWT strategy with Credentials provider only (no OAuth)
+
+
+
+Step 3: Auth.js Configuration and Registration
+
+Layers affected: Auth, API, Database
+
+Actions:
+
+
+
+
+
+Create src/server/auth.ts with Auth.js v5 config:
+
+
+
+
+
+Use PrismaAdapter (for user lookup only; sessions are JWT)
+
+
+
+Configure CredentialsProvider with email/password fields
+
+
+
+authorize callback: look up user by email, verify hash with bcryptjs.compare(), return user object or null
+
+
+
+session callback: embed user.id, user.role, user.organizationId into the JWT/session
+
+
+
+jwt callback: persist custom fields into the token
+
+
+
+Set session: { strategy: "jwt" }
+
+
+
+Set pages: { signIn: "/login" } for custom auth pages
+
+
+
+Export { handlers, auth, signIn, signOut } from the config
+
+
+
+Create route handler at src/app/api/auth/[...nextauth]/route.ts that re-exports handlers
+
+
+
+Create src/server/services/auth.service.ts:
+
+
+
+
+
+registerUser(input: { email, name, password }): validate uniqueness, hash password with bcryptjs.hash(password, 12), create user in DB, return user (no password hash)
+
+
+
+Throw descriptive errors for duplicate email
+
+
+
+Create shared Zod schemas in src/lib/validators/auth.ts:
+
+
+
+
+
+registerSchema: email (.email()), name (.min(1).max(100)), password (.min(8).max(128))
+
+
+
+loginSchema: email, password
+
+
+
+Augment Auth.js types in src/types/next-auth.d.ts to include id, role, organizationId on Session["user"]
+
+Risks/Considerations:
+
+
+
+
+
+Auth.js Credentials provider does NOT auto-persist users via the adapter; registration must be a separate flow (our auth.service.registerUser)
+
+
+
+JWT tokens are HttpOnly cookies; they won't be accessible from client JS (secure by default)
+
+
+
+bcryptjs (pure JS) is chosen over bcrypt to avoid native compilation issues
+
+
+
+Session data becomes stale if user's role/org changes; the jwt callback should re-fetch from DB on token refresh, or we accept eventual consistency within the JWT expiry window
+
+
+
+Step 4: tRPC Server Setup and Auth Middleware
+
+Layers affected: API infrastructure
+
+Actions:
+
+
+
+
+
+Create src/server/trpc/init.ts:
+
+
+
+
+
+Define createTRPCContext that extracts the Auth.js session via auth() and attaches it + prisma to context
+
+
+
+Use React cache() to deduplicate context creation per request
+
+
+
+Initialize tRPC with superjson transformer and Zod error formatting
+
+
+
+Define base procedures:
+
+
+
+
+
+publicProcedure - no auth required
+
+
+
+protectedProcedure - middleware that asserts ctx.session?.user, throws UNAUTHORIZED otherwise; narrows context type to include non-null user
+
+
+
+orgMemberProcedure - extends protectedProcedure, asserts user.organizationId is set
+
+
+
+orgAdminProcedure - extends orgMemberProcedure, asserts user.role is OWNER or ADMIN
+
+
+
+Create src/server/trpc/root.ts - merges all sub-routers into appRouter, exports AppRouter type
+
+
+
+Create tRPC HTTP handler at src/app/api/trpc/[trpc]/route.ts using fetchRequestHandler
+
+
+
+Create src/lib/trpc/client.ts - tRPC + React Query client setup for client components
+
+
+
+Create src/lib/trpc/server.ts - server-side caller for RSC
+
+
+
+Create src/lib/trpc/query-client.ts - TanStack Query client factory
+
+
+
+Wrap the app in src/app/providers.tsx with QueryClientProvider and trpc.Provider
+
+Risks/Considerations:
+
+
+
+
+
+The middleware chain (public -> protected -> orgMember -> orgAdmin) provides composable, type-safe authorization. Each level narrows the context type.
+
+
+
+The server-side caller enables calling tRPC procedures directly in Server Components without HTTP overhead
+
+
+
+Context must be created per-request; use cache() from React to avoid re-creation within the same request
+
+
+
+Step 5: Organization Service and Router
+
+Layers affected: Business logic, API
+
+Actions:
+
+
+
+
+
+Create src/server/services/org.service.ts:
+
+
+
+
+
+createOrganization(userId: string, name: string):
+
+
+
+
+
+Guard: user must NOT already belong to an organization
+
+
+
+Create org, atomically update user with organizationId and role: OWNER (use Prisma transaction)
+
+
+
+Return the created organization
+
+
+
+getOrganization(orgId: string): fetch org with member count
+
+
+
+getOrganizationMembers(orgId: string): list all members with roles
+
+
+
+Create Zod schemas in src/lib/validators/org.ts:
+
+
+
+
+
+createOrgSchema: { name: z.string().min(1).max(100) }
+
+
+
+Create src/server/trpc/routers/org.ts:
+
+
+
+
+
+create - protectedProcedure (user must be auth'd but NOT in an org yet), calls orgService.createOrganization
+
+
+
+get - orgMemberProcedure, returns current user's organization
+
+
+
+members - orgMemberProcedure, returns member list (filtered by role for employees if needed)
+
+
+
+list - protectedProcedure, returns all organizations (for join request browsing)
+
+Risks/Considerations:
+
+
+
+
+
+The createOrganization transaction must be atomic: if user update fails (e.g., user already has an org due to race condition), the org creation rolls back. Prisma's $transaction handles this.
+
+
+
+Organization names are unique to prevent confusion
+
+
+
+The list endpoint should only return public info (name, member count), not sensitive details
+
+
+
+Step 6: Join Request Service and Router
+
+Layers affected: Business logic, API
+
+Actions:
+
+
+
+
+
+Create src/server/services/join-request.service.ts:
+
+
+
+
+
+createJoinRequest(userId: string, organizationId: string):
+
+
+
+
+
+Guard: user must NOT already belong to an organization
+
+
+
+Guard: no existing PENDING request for this user+org pair
+
+
+
+Create JoinRequest with status PENDING
+
+
+
+reviewJoinRequest(requestId: string, reviewerId: string, action: "APPROVED" | "REJECTED", role?: MemberRole):
+
+
+
+
+
+Guard: request must be in PENDING status
+
+
+
+Guard: reviewer must be OWNER or ADMIN of the target organization
+
+
+
+If approved: role is required (must be ADMIN or EMPLOYEE; cannot assign OWNER)
+
+
+
+If approved: atomically update request status + update user's organizationId and role (Prisma transaction)
+
+
+
+If rejected: update request status only
+
+
+
+getPendingRequests(organizationId: string): list all PENDING requests for an org
+
+
+
+getUserRequests(userId: string): list all requests by a user (for status checking)
+
+
+
+Create Zod schemas in src/lib/validators/join-request.ts:
+
+
+
+
+
+createJoinRequestSchema: { organizationId: z.string() }
+
+
+
+reviewJoinRequestSchema: { requestId: z.string(), action: z.enum(["APPROVED", "REJECTED"]), role: z.enum(["ADMIN", "EMPLOYEE"]).optional() } with .refine() to require role when action is APPROVED
+
+
+
+Create src/server/trpc/routers/join-request.ts:
+
+
+
+
+
+create - protectedProcedure (no org membership required)
+
+
+
+review - orgAdminProcedure (OWNER/ADMIN only)
+
+
+
+listPending - orgAdminProcedure
+
+
+
+myRequests - protectedProcedure
+
+Risks/Considerations:
+
+
+
+
+
+Race condition: two admins approving the same request simultaneously. The Prisma transaction + status check inside the transaction prevents double-approval.
+
+
+
+A user with a PENDING request could also create an org in the meantime. The createOrganization guard (user must not have an org) and the approval guard (user must not have an org) both protect against this.
+
+
+
+Cannot assign OWNER role via join requests; only the creator gets OWNER automatically.
+
+
+
+After approval, the user's JWT will still contain the old (null) organizationId until they re-authenticate or the token refreshes. The jwt callback should re-fetch user data from DB periodically.
+
+
+
+Step 7: Task Service and Router
+
+Layers affected: Business logic, API
+
+Actions:
+
+
+
+
+
+Create src/server/services/task.service.ts:
+
+
+
+
+
+createTask(input: { title, description, assigneeId?, creatorId, organizationId }):
+
+
+
+
+
+Guard: if assigneeId is provided, assignee must belong to the same organization
+
+
+
+Create task with status TODO
+
+
+
+updateTaskStatus(taskId: string, userId: string, newStatus: TaskStatus):
+
+
+
+
+
+Fetch task, verify it belongs to user's organization
+
+
+
+If user is EMPLOYEE: can only update their own assigned tasks
+
+
+
+If user is OWNER/ADMIN: can update any task in their org
+
+
+
+Validate state transition (business rule: any transition is allowed per spec, but the service layer is where we'd add constraints)
+
+
+
+assignTask(taskId: string, assigneeId: string, organizationId: string):
+
+
+
+
+
+Guard: task belongs to organization
+
+
+
+Guard: assignee belongs to organization
+
+
+
+listTasks(organizationId: string, userId: string, role: MemberRole):
+
+
+
+
+
+OWNER/ADMIN: return all tasks in the organization
+
+
+
+EMPLOYEE: return only tasks assigned to the user
+
+
+
+getTask(taskId: string, userId: string, role: MemberRole, organizationId: string):
+
+
+
+
+
+Same visibility rules as list
+
+
+
+Create Zod schemas in src/lib/validators/task.ts:
+
+
+
+
+
+createTaskSchema: { title: z.string().min(1).max(200), description: z.string().max(2000).default(""), assigneeId: z.string().optional() }
+
+
+
+updateTaskStatusSchema: { taskId: z.string(), status: z.enum(["TODO", "IN_PROGRESS", "DONE"]) }
+
+
+
+assignTaskSchema: { taskId: z.string(), assigneeId: z.string() }
+
+
+
+Create src/server/trpc/routers/task.ts:
+
+
+
+
+
+create - orgAdminProcedure
+
+
+
+list - orgMemberProcedure (service handles role-based filtering)
+
+
+
+get - orgMemberProcedure
+
+
+
+updateStatus - orgMemberProcedure (service handles permission check)
+
+
+
+assign - orgAdminProcedure
+
+Risks/Considerations:
+
+
+
+
+
+Task visibility is enforced at the service layer, not just the router, so it remains testable independently
+
+
+
+Employee permission check for status update is in the service, not middleware, because it depends on task ownership (data-dependent authorization)
+
+
+
+The assigneeId foreign key is nullable to allow unassigned tasks
+
+
+
+Step 8: Frontend - Authentication Pages
+
+Layers affected: UI
+
+Actions:
+
+
+
+
+
+Create layout src/app/(auth)/layout.tsx - centered card layout for auth pages
+
+
+
+Create src/app/(auth)/login/page.tsx:
+
+
+
+
+
+Client component with controlled form
+
+
+
+Uses signIn("credentials", { email, password, redirect: false }) from next-auth/react
+
+
+
+Displays validation errors (Zod client-side validation reusing loginSchema)
+
+
+
+Redirects to dashboard on success
+
+
+
+Create src/app/(auth)/register/page.tsx:
+
+
+
+
+
+Client component with form for email, name, password, confirm password
+
+
+
+Calls trpc.auth.register mutation
+
+
+
+On success, auto-signs in and redirects to dashboard
+
+
+
+Create auth tRPC router src/server/trpc/routers/auth.ts:
+
+
+
+
+
+register - publicProcedure, calls authService.registerUser
+
+
+
+Add src/app/(auth)/ pages using shadcn/ui Card, Input, Button, Label components
+
+
+
+Create src/middleware.ts using Auth.js middleware to protect /dashboard/* routes, redirect unauthenticated users to /login
+
+Risks/Considerations:
+
+
+
+
+
+Registration goes through tRPC (not Auth.js) because Credentials provider doesn't handle registration
+
+
+
+Auth.js middleware runs on the Edge; ensure no Prisma calls in middleware (JWT strategy avoids this)
+
+
+
+Client-side validation is for UX only; server always re-validates
+
+
+
+Step 9: Frontend - Dashboard, Organization, and Task Management
+
+Layers affected: UI
+
+Actions:
+
+
+
+
+
+Create dashboard layout src/app/(dashboard)/layout.tsx:
+
+
+
+
+
+Server component that fetches session
+
+
+
+Sidebar navigation with: Dashboard, Tasks, Organization, Members, Join Requests (conditional on role)
+
+
+
+Top bar with user info and sign-out button
+
+
+
+Create src/app/(dashboard)/page.tsx (Dashboard home):
+
+
+
+
+
+If user has no org: show options to create org or browse/join orgs
+
+
+
+If user has org: show task summary (counts by status), recent activity
+
+
+
+Create src/app/(dashboard)/organizations/page.tsx:
+
+
+
+
+
+List all organizations (for users without an org)
+
+
+
+"Request to Join" button per org
+
+
+
+Show user's pending requests and their status
+
+
+
+Create src/app/(dashboard)/organization/page.tsx:
+
+
+
+
+
+Current org details, member list with roles
+
+
+
+For OWNER/ADMIN: pending join requests with approve/reject actions, role assignment dropdown
+
+
+
+Create src/app/(dashboard)/tasks/page.tsx:
+
+
+
+
+
+Task list with status filters and search
+
+
+
+OWNER/ADMIN: "Create Task" button, ability to assign tasks
+
+
+
+EMPLOYEE: filtered to own tasks only
+
+
+
+Status update via dropdown/buttons on each task card
+
+
+
+Use optimistic updates via React Query for status changes
+
+
+
+Component library:
+
+
+
+
+
+TaskCard - displays task with status badge, assignee, timestamps
+
+
+
+TaskForm - create/edit task dialog
+
+
+
+MemberList - organization members table
+
+
+
+JoinRequestList - pending requests with action buttons
+
+
+
+StatusBadge - colored badge for task/request status
+
+Risks/Considerations:
+
+
+
+
+
+Use tRPC's server-side prefetching with HydrateClient for initial page loads (SSR data), then client-side React Query for mutations and re-fetches
+
+
+
+Role-based UI rendering: hide admin controls from employees, but always enforce on the server
+
+
+
+Optimistic updates for status changes improve UX but must handle rollback on server errors
+
+
+
+Step 10: Testing, Polish, and Production Readiness
+
+Layers affected: Testing, DevOps, Documentation
+
+Actions:
+
+
+
+
+
+Configure Vitest in vitest.config.ts with path aliases matching tsconfig.json
+
+
+
+Write unit tests for service layer in __tests__/:
+
+
+
+
+
+task.service.test.ts:
+
+
+
+
+
+Test task creation with valid/invalid inputs
+
+
+
+Test status transitions (TODO -> IN_PROGRESS -> DONE, and any other valid paths)
+
+
+
+Test employee can only update own tasks
+
+
+
+Test admin/owner can update any task in org
+
+
+
+Test cross-org task access is denied
+
+
+
+join-request.service.test.ts:
+
+
+
+
+
+Test request creation guards (user already in org, duplicate request)
+
+
+
+Test approval flow (atomic user+request update)
+
+
+
+Test rejection flow
+
+
+
+Test cannot approve already-processed request
+
+
+
+org.service.test.ts:
+
+
+
+
+
+Test org creation makes user OWNER
+
+
+
+Test user already in org cannot create another
+
+
+
+auth.service.test.ts:
+
+
+
+
+
+Test registration with duplicate email
+
+
+
+Test password hashing (verify hash is not plaintext)
+
+
+
+Testing approach: use a separate SQLite test database, seed minimal data per test, clean up after. Alternatively, mock Prisma client with vitest.mock() for pure unit tests.
+
+
+
+Add README.md with:
+
+
+
+
+
+Project overview and architecture
+
+
+
+Setup instructions (env vars, DB setup, dev server)
+
+
+
+Available scripts
+
+
+
+Add npm scripts: dev, build, start, test, db:push, db:studio
+
+
+
+Final review:
+
+
+
+
+
+Run npx tsc --noEmit to verify zero type errors
+
+
+
+Ensure no ESLint warnings
+
+
+
+Verify all Zod schemas are used consistently between client and server
+
+
+
+Test complete user flows: register -> create org -> browse orgs -> request join -> approve -> create task -> assign -> update status
+
+Risks/Considerations:
+
+
+
+
+
+Service tests should be fast and isolated; avoid spinning up the full Next.js server
+
+
+
+SQLite test DB should be in-memory (:memory:) or a temp file for speed
+
+
+
+Ensure .env.test with test DATABASE_URL is excluded from git

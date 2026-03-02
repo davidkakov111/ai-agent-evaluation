@@ -1,0 +1,19 @@
+Step 2 is complete. Here's a summary of what was done:
+Prisma Initialization (v7.4.2)
+Initialized Prisma with SQLite datasource via npx prisma init --datasource-provider sqlite
+Prisma 7 uses the new prisma.config.ts pattern for datasource URL configuration
+Required installing @prisma/adapter-better-sqlite3 since Prisma 7 uses driver adapters
+Schema (prisma/schema.prisma) - 4 models with appropriate indexes:
+User — id, email (unique), name, passwordHash, organizationId (nullable FK), role (nullable string), timestamps. Indexes on organizationId.
+Organization — id, name (unique), timestamps. Reverse relations to members, tasks, join requests.
+Task — id, title, description, status (defaults to "TODO"), organizationId (FK), assigneeId (nullable FK), creatorId (FK), timestamps. Indexes on organizationId, assigneeId, creatorId.
+JoinRequest — id, userId (FK), organizationId (FK), status (defaults to "PENDING"), assignedRole (nullable), reviewedBy (nullable), timestamps. Unique constraint on [userId, organizationId].
+Fields like role, status, assignedRole use String type (SQLite has no native enums). Application-level validation via TypeScript constants in src/lib/constants.ts.
+Application-Level Enums (src/lib/constants.ts)
+MemberRole: OWNER | ADMIN | EMPLOYEE + ADMIN_ROLES helper array
+TaskStatus: TODO | IN_PROGRESS | DONE
+JoinRequestStatus: PENDING | APPROVED | REJECTED
+Prisma Client Singleton (src/server/db.ts)
+Uses PrismaBetterSqlite3 adapter with DATABASE_URL from environment
+Global singleton pattern to prevent connection leaks during Next.js hot reload
+Verification: Zero TypeScript errors, zero ESLint warnings, clean build, all 4 tables accessible at runtime.

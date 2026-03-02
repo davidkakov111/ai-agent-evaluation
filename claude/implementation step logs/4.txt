@@ -1,0 +1,29 @@
+Step 4 is complete. Here's a summary of everything implemented:
+tRPC Initialization (src/server/trpc/init.ts)
+createTRPCContext — extracts Auth.js session via auth() and attaches prisma client to context, wrapped in React cache() for per-request deduplication
+Configured with superjson transformer for proper Date/Map/Set serialization
+Four-level middleware chain with progressively narrowing context types:
+publicProcedure — no auth required
+protectedProcedure — asserts ctx.session.user exists, throws UNAUTHORIZED otherwise
+orgMemberProcedure — extends protected, asserts user.organizationId and user.role are non-null, throws FORBIDDEN otherwise
+orgAdminProcedure — extends protected, asserts role is OWNER or ADMIN using the ADMIN_ROLES constant
+Root Router (src/server/trpc/root.ts)
+Empty router placeholder for sub-routers (org, task, joinRequest, auth) to be added in steps 5-8
+Exports AppRouter type for client-side type inference
+Exports createCaller factory for server-side calls
+tRPC HTTP Handler (src/app/api/trpc/[trpc]/route.ts)
+Uses fetchRequestHandler from @trpc/server/adapters/fetch
+Exports GET and POST handlers at /api/trpc
+Client-Side Setup (src/lib/trpc/client.ts)
+TRPCProvider and useTRPC hook created via createTRPCContext<AppRouter>()
+Query Client Factory (src/lib/trpc/query-client.ts)
+Configures stale time (30s), superjson serialization for dehydration/hydration, and pending query dehydration
+Server-Side Caller (src/lib/trpc/server.ts)
+api() function creates a tRPC caller with full server context for use in React Server Components — no HTTP roundtrip
+Providers (src/app/providers.tsx)
+Client component wrapping QueryClientProvider and TRPCProvider
+Browser-singleton QueryClient to avoid re-creation across navigations
+httpBatchLink with superjson transformer for automatic request batching
+Root Layout (src/app/layout.tsx)
+Updated to wrap children in <Providers>
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build with both /api/auth/[...nextauth] and /api/trpc/[trpc] routes registered.

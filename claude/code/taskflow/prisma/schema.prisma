@@ -1,0 +1,74 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id             String        @id @default(cuid())
+  email          String        @unique
+  name           String
+  passwordHash   String
+  organizationId String?
+  role           String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  organization  Organization?  @relation(fields: [organizationId], references: [id])
+  joinRequests  JoinRequest[]
+  assignedTasks Task[]         @relation("AssignedTo")
+  createdTasks  Task[]         @relation("CreatedBy")
+
+  @@index([organizationId])
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members      User[]
+  tasks        Task[]
+  joinRequests JoinRequest[]
+}
+
+model Task {
+  id             String   @id @default(cuid())
+  title          String
+  description    String   @default("")
+  status         String   @default("TODO")
+  organizationId String
+  assigneeId     String?
+  creatorId      String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id])
+  assignee     User?        @relation("AssignedTo", fields: [assigneeId], references: [id])
+  creator      User         @relation("CreatedBy", fields: [creatorId], references: [id])
+
+  @@index([organizationId])
+  @@index([assigneeId])
+  @@index([creatorId])
+}
+
+model JoinRequest {
+  id             String   @id @default(cuid())
+  userId         String
+  organizationId String
+  status         String   @default("PENDING")
+  assignedRole   String?
+  reviewedBy     String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id])
+  organization Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+}

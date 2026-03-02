@@ -1,0 +1,38 @@
+Everything passes. Here's the complete summary.
+Docker Setup Summary
+Files Created
+File	Purpose
+Dockerfile	Multi-stage production build (4 stages)
+.dockerignore	Exclude unnecessary files from build context
+docker-compose.yaml	Single-command startup with volume + env config
+docker-entrypoint.sh	Runs migrations, then starts the server
+.env.docker	Template for Docker environment variables
+prisma/migrations/	Initial migration (auto-generated from schema)
+Files Modified
+File	Change
+next.config.ts	Added output: "standalone" for minimal production bundle
+package.json	Added db:migrate and db:migrate:deploy scripts
+Dockerfile Architecture (4 stages)
+base (node:22-alpine)  ├── deps          npm ci (all dependencies)  ├── builder       prisma generate + next build  ├── prisma-cli    isolated Prisma CLI install (~50MB)  └── runner        standalone output + prisma-cli + entrypoint
+deps -- Installs all dependencies (cached layer, only rebuilds when package.json changes)
+builder -- Generates Prisma client and builds Next.js standalone output
+prisma-cli -- Isolated prisma + dotenv install for migration at startup (avoids pulling the entire production node_modules into the final image)
+runner -- Copies only the standalone server, static assets, Prisma migration files, and the CLI. Final image: 423MB
+Startup Sequence
+docker-entrypoint.sh runs prisma migrate deploy (creates DB if missing, applies pending migrations)
+Starts the Next.js standalone server (node server.js)
+Server is ready in ~150ms
+Verified End-to-End
+Check	Result
+docker compose build	Passes (all 4 stages)
+Migrations run at startup	Creates SQLite DB and applies init migration
+Landing page (/)	200
+Login page (/login)	200
+Register page (/register)	200
+Auth API (/api/auth/providers)	200
+Dashboard redirect (unauthenticated)	307 -> /login
+tRPC registration (/api/trpc/auth.register)	Creates user in DB, returns JSON
+Data persistence (Docker volume)	Restarting container preserves data
+Local dev (tsc, lint, tests, build)	All pass (39/39 tests)
+Usage
+# Generate a secretecho "AUTH_SECRET=$(openssl rand -hex 32)" > .env.docker# Start from zerodocker compose up

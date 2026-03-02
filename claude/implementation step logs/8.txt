@@ -1,0 +1,26 @@
+Step 8 is complete. Here's a summary:
+Auth tRPC Router (src/server/trpc/routers/auth.ts)
+register — publicProcedure with registerSchema input. Calls registerUser service, maps duplicate-email errors to CONFLICT.
+Auth Layout (src/app/(auth)/layout.tsx)
+Centered, max-width container for auth pages. Clean and minimal.
+Login Page (src/app/(auth)/login/page.tsx)
+Client component with controlled email/password form
+Client-side validation using loginSchema.safeParse() for instant UX feedback
+Calls signIn("credentials", { ..., redirect: false }) from next-auth/react
+Displays error on invalid credentials, redirects to /dashboard on success
+Link to registration page
+Uses shadcn/ui Card, Input, Button, Label components
+Register Page (src/app/(auth)/register/page.tsx)
+Client component with name, email, password, confirm password fields
+Client-side password match validation + registerSchema.safeParse()
+Calls trpc.auth.register mutation via useMutation with tRPC v11's mutationOptions pattern
+On success: auto-signs in via signIn("credentials") then redirects to /dashboard
+On error: displays server error message
+Link to login page
+Route Protection (src/proxy.ts)
+Uses Next.js 16's new proxy convention (replaces deprecated middleware)
+Exports auth as proxy from Auth.js, protecting all /dashboard/* routes
+Runs on Node.js runtime by default (no Edge Runtime limitations with Prisma)
+Unauthenticated users are redirected to /login (configured in Auth.js pages.signIn)
+Root Router — updated to include auth: authRouter
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build with no deprecation warnings. Routes: /, /login, /register, /api/auth/[...nextauth], /api/trpc/[trpc], proxy on /dashboard/*.

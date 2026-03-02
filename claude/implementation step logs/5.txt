@@ -1,0 +1,16 @@
+Step 5 is complete. Here's a summary:
+Zod Schema (src/lib/validators/org.ts)
+createOrgSchema — validates name (1-100 chars)
+Exports CreateOrgInput inferred type
+Organization Service (src/server/services/org.service.ts)
+createOrganization(userId, name) — guards against user already in an org, then uses an interactive Prisma $transaction to atomically create the org and update the user with organizationId + role: OWNER. If either operation fails, both roll back.
+getOrganization(orgId) — fetches org with _count.members
+getOrganizationMembers(orgId) — returns member list (id, email, name, role, createdAt), ordered by join date
+listOrganizations() — returns all orgs with name, creation date, and member count (public info only)
+tRPC Router (src/server/trpc/routers/org.ts)
+create — protectedProcedure with createOrgSchema input. Maps service errors to appropriate tRPC error codes: CONFLICT for duplicate org name or user already in an org.
+get — orgMemberProcedure, returns the caller's organization details
+members — orgMemberProcedure, returns the member list for the caller's org
+list — protectedProcedure, returns all organizations (for users browsing to join)
+Root Router — updated to include org: orgRouter
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build.

@@ -1,0 +1,21 @@
+Step 6 is complete. Here's a summary:
+Zod Schemas (src/lib/validators/join-request.ts)
+createJoinRequestSchema — validates organizationId (non-empty string)
+reviewJoinRequestSchema — validates requestId, action (enum APPROVED | REJECTED), and role (enum ADMIN | EMPLOYEE, optional). Uses Zod 4's .check() to enforce that role is required when action is APPROVED.
+Join Request Service (src/server/services/join-request.service.ts)
+createJoinRequest(userId, organizationId):
+Guards: user must not already be in an org, org must exist, no existing PENDING request for the same user+org pair
+Creates a PENDING join request, returns it with org name
+reviewJoinRequest(requestId, reviewerId, reviewerOrgId, action, role?):
+Guards: request must exist, must belong to reviewer's org, must be PENDING
+Approval path: validates role (must be ADMIN or EMPLOYEE, not OWNER), checks user isn't already in an org, then uses interactive $transaction to atomically update request status + assign user to org with role. The where clause includes status: PENDING to prevent double-approval race conditions.
+Rejection path: simply updates request status
+getPendingRequests(orgId) — lists pending requests with user info
+getUserRequests(userId) — lists all of a user's requests with org info, newest first
+tRPC Router (src/server/trpc/routers/join-request.ts)
+create — protectedProcedure (any authenticated user without an org)
+review — orgAdminProcedure (OWNER/ADMIN only). Maps service errors to NOT_FOUND, FORBIDDEN, or CONFLICT tRPC codes.
+listPending — orgAdminProcedure, scoped to the reviewer's org
+myRequests — protectedProcedure, returns the caller's own requests
+Root Router — updated to include joinRequest: joinRequestRouter
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build.

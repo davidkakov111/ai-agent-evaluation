@@ -1,0 +1,52 @@
+Review Summary
+Issues Found and Fixed
+Security (3 fixes)
+1. Timing attack in verifyCredentials (src/server/services/auth.service.ts)
+Problem: When a user doesn't exist, bcrypt.compare was never called, making response time measurably faster -- allowing attackers to enumerate registered emails.
+Fix: Always run bcrypt.compare against a dummy hash when the user is not found, ensuring constant-time responses regardless of email existence.
+2. Registration TOCTOU race condition (src/server/services/auth.service.ts)
+Problem: findUnique + create was not atomic. Two concurrent registrations with the same email could both pass the check.
+Fix: Removed the pre-check. Now relies on the database unique constraint and catches Unique constraint errors, converting them to a user-friendly message.
+3. Internal error messages leaked to clients (all 4 tRPC routers)
+Problem: Every router's INTERNAL_SERVER_ERROR fallback passed the raw error message (which could contain Prisma internals, stack traces, etc.) directly to the client.
+Fix: All INTERNAL_SERVER_ERROR responses now use fixed generic messages ("Registration failed", "Failed to create organization", etc.).
+Race Conditions (3 fixes)
+4. createOrganization TOCTOU (src/server/services/org.service.ts)
+Problem: user.organizationId was checked outside the transaction. A concurrent join request approval could assign the user to an org between the check and the transaction.
+Fix: Moved the entire flow (user lookup, check, org creation, user update) inside a single interactive transaction.
+5. join-request.service.ts -- three race conditions
+Problem (a): createJoinRequest used findFirst + create non-atomically. The @@unique constraint could throw an unhandled Prisma error on concurrent requests.
+Problem (b): Approval read request.user.organizationId before the transaction. A concurrent operation could assign the user to another org, and the update would overwrite it.
+Problem (c): Rejection used where: { id } without status: PENDING, meaning it could overwrite an already-approved request.
+Fix: (a) Switched to findUnique on the composite key and handled each status explicitly. (b) Changed to user.updateMany with where: { organizationId: null } inside the transaction, checking count === 0 to detect conflicts. (c) Changed rejection to joinRequest.updateMany with where: { id, status: PENDING } and checking count === 0.
+6. Re-apply after rejection impossible (src/server/services/join-request.service.ts)
+Problem: @@unique([userId, organizationId]) prevented creating a second row. A user whose request was REJECTED could never re-apply.
+Fix: When a REJECTED row exists, the service now updates it back to PENDING instead of trying to create a new one.
+Validation (2 fixes)
+7. Missing status validation in updateTaskStatus (src/server/services/task.service.ts)
+Problem: newStatus accepted any string. Invalid values like "DELETED" would be written directly to the database.
+Fix: Added validation against the TaskStatus enum values before updating.
+8. Validator gaps (src/lib/validators/auth.ts, src/lib/validators/org.ts)
+Problem: Login schema had no max on password (enabling DoS via very long strings). Org name had no trim() (allowing whitespace-only names or duplicates differing only in surrounding spaces).
+Fix: Added .max(128) to login password schema. Added .trim() to org name schema.
+Frontend (3 fixes)
+9. Stale session after join request approval (src/app/dashboard/dashboard-no-org.tsx)
+Problem: When an admin approved a user's join request, the user's JWT was never refreshed. The sidebar stayed in "no org" mode indefinitely.
+Fix: Added refetchInterval: 10_000 to the myRequests query, and a useEffect that detects when any request becomes APPROVED and calls updateSession() + router.refresh().
+10. Silent mutation failures (src/components/task-card.tsx, src/components/join-request-list.tsx)
+Problem: Neither component had onError handlers. Failed status updates and join request reviews were completely silent.
+Fix: TaskCard now re-fetches the task list on error (reverting the UI). JoinRequestList now shows a toast notification on error and re-fetches the list.
+11. Missing Toaster component + replaced window.location.reload (src/app/layout.tsx, src/app/dashboard/dashboard-no-org.tsx)
+Problem: sonner was a dependency but <Toaster /> was never rendered, so toast notifications would have been invisible. Also, window.location.reload() after org creation was a heavy-handed approach.
+Fix: Added <Toaster /> to the root layout. Replaced window.location.reload() with router.refresh().
+Tests
+Updated existing tests to match new service logic (auth registration, join-request flows).
+Added 5 new test cases: re-apply after rejection, already-approved detection, concurrent rejection handling, concurrent approval with user already in org, invalid task status validation.
+Final count: 39/39 tests passing (up from 34).
+Issues Noted but Not Fixed (acceptable tradeoffs)
+Issue	Reason not fixed
+JWT type casts in Auth.js callbacks (token.id as string, etc.)	Standard Auth.js pattern; the callbacks always set these values on sign-in. Adding runtime checks would add complexity for marginal benefit.
+No password complexity rules	The plan specified bcryptjs hashing; adding complexity rules is a product decision, not a bug. Min 8 chars is reasonable.
+org.list returns all organizations to any authenticated user	This is intentional -- users without an org need to browse available organizations.
+No aria-current="page" on nav links	Accessibility enhancement, not a bug.
+Session can become stale after admin role changes	Server-side middleware always enforces authorization. Stale UI is cosmetic; the JWT refreshes on update() or re-login.

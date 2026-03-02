@@ -1,0 +1,28 @@
+Step 1 is complete. Here's a summary of everything that was set up:
+Project: taskflow/
+Framework & Runtime:
+Next.js 16.1.6 with App Router, TypeScript strict mode, Tailwind CSS v4
+React 19.2.3
+Core Dependencies Installed:
+@trpc/server@11.0.0, @trpc/client@11.0.0, @trpc/tanstack-react-query@11.0.0 + @tanstack/react-query@5.90.21
+prisma@7.4.2 + @prisma/client@7.4.2
+next-auth@5.0.0-beta.30 + @auth/prisma-adapter@2.11.1
+zod@4.3.6 (Zod 4, compatible with tRPC v11 via Standard Schema)
+bcryptjs@3.0.3 + @types/bcryptjs
+superjson, server-only, client-only
+vitest@4.0.18 (dev)
+UI Components (shadcn/ui):
+Button, Card, Input, Label, Badge, Select, Dialog, DropdownMenu, Separator, Sonner (toast), Table, Textarea
+Configuration:
+.gitignore — includes prisma/*.db, prisma/*.db-journal, .env*
+.env — DATABASE_URL, AUTH_SECRET, AUTH_TRUST_HOST
+tsconfig.json — strict: true, @/* path alias to src/*
+npm scripts: dev, build, start, lint, test, test:watch, db:push, db:studio
+Directory Structure Ready:
+src/server/trpc/routers/ — tRPC routers
+src/server/services/ — business logic services
+src/lib/trpc/ — client/server tRPC helpers
+src/lib/validators/ — shared Zod schemas
+src/types/ — type augmentations
+__tests__/ — unit tests
+Verification: Clean build (next build), zero TypeScript errors (tsc --noEmit), zero ESLint warnings.

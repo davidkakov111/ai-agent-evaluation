@@ -1,0 +1,69 @@
+⭐ AI Developer Productivity Scorecard:
+
+| Metric                   | Question To Evaluate                                                                       | Score (0-10) | Why?
+| ------------------------ | ------------------------------------------------------------------------------------------ | ------------ |--------------------------------------------------------------------
+| Idea Match               | Did the AI correctly implement the requested project idea and features?                    |              |
+| Architecture Quality     | Is the project structure clean, scalable, and logically separated (DB, API, UI, services)? |              |
+| Security + Authorization | Are roles, permissions, and data isolation correctly enforced in backend logic?            |              |
+| TypeScript Quality       | Is the code strongly typed, readable, and free of type safety shortcuts?                   |              |
+| Code Quality             | Is the code clean, maintainable, and not unnecessarily complex?                            |              |
+| Debugging Skill          | Did the AI correctly identify and fix bugs during review phase?                            |              |
+| Deployment Quality       | Does Docker + startup setup work with minimal manual fixing?                               |              |
+| Use Existing Solutions   | Did the AI use established libraries instead of reinventing functionality?                 |              |
+| Autonomy                 | How independently did the AI complete tasks without you guiding implementation?            |              |
+
+Final Score =
+    ( Idea Match × 0.25 ) +
+    ( Autonomy × 0.25 ) +
+    ( Architecture Quality × 0.15 ) +
+    ( Security + Authorization × 0.15 ) +
+    ( Code Quality × 0.10 ) +
+    ( Debugging Skill × 0.05 ) +
+    ( Deployment Quality × 0.03 ) +
+    ( TypeScript Quality × 0.04 ) +
+    ( Use Existing Solutions × 0.03 )
+
+Ignore everything else if these are low:
+    Idea Match
+    Autonomy
+    Security
+
+⭐ Most Important Real Productivity Question (Answer Separately)
+    How much did I personally need to correct, rewrite, or guide the AI to reach the final desired result?
+
+Planning Score: ? / 10
+    Description:
+
+Implementation Score: ? / 10
+    Description:
+
+Any other notes/observations?
+    -----------------------------------------------------
+    ERROR 
+
+        When I create an organization, I get a silent error and the UI won't update due to a silent server error. After I refresh the page, the organization appears as an external org that I can request to join, but I created it — it shouldn't show like I don't belong to it. I also can't join it at all. However, after I log out and log back in, I am correctly shown as a member of the organization.
+        This was both implementation and planning mistake.
+        The AI responded and resolved it: debug-1.txt
+    -----------------------------------------------------
+    BAD UX
+
+        I can access the login and register pages even though I am already authenticated, but this should not be possible.
+        This was a planning mistake.
+        The AI responded and resolved it: debug-2.txt
+    -----------------------------------------------------
+    UNRESPONSIVENESS
+        
+        The website isn't responsive, mostly due to the fixed-width left sidebar. The sidebar won't shrink or collapse on mobile, and the rest of the page can't fit in the remaining space.
+        This was a planning mistake.
+        The AI responded and resolved it: debug-3.txt
+    -----------------------------------------------------
+    BAD PRACTICE
+
+        Missing .example env files
+    -----------------------------------------------------
+
+    It uses the shadcn/ui library, that's a plus, since other agents used raw HTML + CSS only.
+
+Time to implement evrything was: 1 h 26 min production debugging (1 h 20 min with careful manual testing) 
+
+Monthly cost: $18

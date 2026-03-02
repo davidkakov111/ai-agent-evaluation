@@ -1,0 +1,21 @@
+Step 7 is complete. Here's a summary:
+Zod Schemas (src/lib/validators/task.ts)
+createTaskSchema — title (1-200 chars), description (max 2000, defaults to ""), assigneeId (optional string)
+updateTaskStatusSchema — taskId + status (enum TODO | IN_PROGRESS | DONE)
+assignTaskSchema — taskId + assigneeId
+getTaskSchema — taskId
+Task Service (src/server/services/task.service.ts)
+createTask(input) — validates assignee belongs to the same org (if provided), creates task with status TODO. Returns task with assignee and creator info.
+updateTaskStatus(taskId, userId, userRole, userOrgId, newStatus) — fetches task, verifies org membership, then applies data-dependent authorization: employees can only update tasks assigned to them, owners/admins can update any org task.
+assignTask(taskId, assigneeId, organizationId) — validates both the task and assignee belong to the org, updates the assignment.
+listTasks(orgId, userId, role) — role-based filtering: EMPLOYEE sees only their assigned tasks; OWNER/ADMIN see all org tasks. Ordered newest first.
+getTask(taskId, userId, role, orgId) — same visibility rules as list, applied to a single task fetch.
+tRPC Router (src/server/trpc/routers/task.ts)
+create — orgAdminProcedure (owners/admins only)
+list — orgMemberProcedure (service handles role-based filtering)
+get — orgMemberProcedure (service handles visibility check)
+updateStatus — orgMemberProcedure (service handles employee ownership check)
+assign — orgAdminProcedure (owners/admins only)
+Shared mapServiceError helper translates service errors to appropriate tRPC codes (NOT_FOUND, FORBIDDEN, BAD_REQUEST)
+Root Router — updated to include task: taskRouter
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build.

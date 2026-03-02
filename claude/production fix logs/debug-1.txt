@@ -1,0 +1,5 @@
+Root cause analysis:
+This was both a planning and implementation mistake. The architecture relied on Auth.js's useSession().update() to refresh the JWT after state changes (org creation, join request approval). But with the Credentials provider in Auth.js v5, update() triggers a CredentialsSignin error because it attempts to re-validate the session through the authorize flow — which has no credentials to work with. The JWT cookie was never updated, so every subsequent auth() call returned stale data.
+What changed (2 files):
+src/server/auth.ts — Made the session callback async and added a DB query to always fetch the user's current role and organizationId from the database. This means every call to auth() returns ground-truth session data regardless of what the JWT cookie contains. For SQLite, this is a sub-millisecond indexed lookup — negligible overhead.
+src/app/dashboard/dashboard-no-org.tsx — Removed the broken useSession().update() dependency entirely. Now org creation and join request approval just call router.refresh(), which triggers server component re-renders that get fresh data through the fixed session callback.

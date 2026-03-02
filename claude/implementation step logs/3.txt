@@ -1,0 +1,22 @@
+Step 3 is complete. Here's a summary of what was implemented:
+Zod Validation Schemas (src/lib/validators/auth.ts)
+registerSchema — email (using Zod 4 z.email()), name (1-100 chars), password (8-128 chars)
+loginSchema — email + password (non-empty)
+Both export their inferred types (RegisterInput, LoginInput)
+Auth Service (src/server/services/auth.service.ts)
+registerUser(input) — checks for duplicate email, hashes password with bcryptjs (12 salt rounds), creates user in DB, returns user without password hash
+verifyCredentials(email, password) — looks up user by email, verifies password hash with bcrypt.compare(), returns user data or null
+Clean separation: no Auth.js or HTTP dependency, purely testable business logic
+Auth.js Configuration (src/server/auth.ts)
+JWT session strategy — no database session tables needed
+Credentials provider — delegates to verifyCredentials service
+jwt callback — persists id, role, organizationId into the token on sign-in; re-fetches from DB on trigger: "update" (used when role/org changes)
+session callback — maps token fields to the session object exposed to the client
+Type augmentation — Session.user includes id, role, organizationId with proper types
+Custom sign-in page at /login
+Exports { handlers, auth, signIn, signOut }
+Route Handler (src/app/api/auth/[...nextauth]/route.ts)
+Re-exports GET and POST from the Auth.js handlers
+Type Declarations (src/types/next-auth.d.ts)
+Augments next-auth module with User.role, User.organizationId, and full Session.user type
+Verification: Zero TypeScript errors, zero ESLint warnings, clean production build with /api/auth/[...nextauth] route registered.

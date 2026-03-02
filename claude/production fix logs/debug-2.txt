@@ -1,0 +1,5 @@
+Summary of both issues:
+Issue 1 — Auth pages accessible while authenticated: Planning oversight. The original plan protected /dashboard/* from unauthenticated users (via the proxy) but never addressed the reverse — preventing authenticated users from accessing /login and /register.
+Fix: Made src/app/(auth)/layout.tsx a server component that calls auth() and redirects to /dashboard if a session exists. Now both pages return HTTP 307 → /dashboard for authenticated users, while remaining fully accessible to unauthenticated users (HTTP 200).
+Issue 2 — CredentialsSignin error in logs: Auth.js v5 default behavior. Auth.js v5 logs CredentialsSignin as [error] whenever authorize() returns null (wrong password). This is a failed login attempt, not a server error, but the default logger treats it as one.
+Fix: Added a custom logger.error in the NextAuth config that filters out CredentialsSignin errors, keeping the logs clean while still logging genuine errors.

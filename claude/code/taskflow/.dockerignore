@@ -1,0 +1,16 @@
+node_modules
+.next
+.git
+.gitignore
+.env*
+*.md
+__tests__
+coverage
+vitest.config.ts
+.DS_Store
+prisma/*.db
+prisma/*.db-journal
+src/generated/
+.vercel
+*.tsbuildinfo
+next-env.d.ts

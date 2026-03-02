@@ -1,0 +1,6 @@
+This was a planning oversight. The implementation plan didn't address responsive/mobile layout at all, so the dashboard shipped with a rigid flex + w-64 sidebar that has no breakpoint behavior.
+What changed (src/app/dashboard/dashboard-shell.tsx):
+Desktop (md+): Sidebar remains the same — fixed w-64, always visible beside the content.
+Mobile (<md): Sidebar is completely hidden. A top bar appears with the app title and a hamburger button. Tapping it opens the sidebar as a Sheet (slide-in drawer overlay) from the left. Tapping a nav link auto-closes the drawer.
+Extracted a shared SidebarContent component so both the desktop sidebar and the mobile drawer render identical navigation, user info, and sign-out button — no duplication.
+Content padding is slightly tighter on mobile (p-4 vs p-6) to maximize usable space.
