@@ -1,5 +1,7 @@
 # AI Coding Agent Benchmark
 
+![Leaderboard](leaderboard.png)
+
 ## What Is This?
 
 This repository is a practical benchmark comparing the top coding agents:
